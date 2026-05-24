@@ -1,57 +1,48 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import type { Summary } from "@/lib/api";
 
-const KEY = "pubmed.saved.v1";
-const EVT = "pubmed-saved-changed";
+/// In-memory, tab-scoped store of saved articles. No localStorage, no
+/// IndexedDB — bookmarks live only for the current page session. All
+/// components that mount `useSaved` share the same underlying Map via
+/// a module-level subscription list.
 
-function read(): Summary[] {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return [];
-    return JSON.parse(raw) as Summary[];
-  } catch {
-    return [];
-  }
+const store = new Map<string, Summary>();
+const subscribers = new Set<() => void>();
+
+function emit() {
+  for (const fn of subscribers) fn();
 }
 
 export function useSaved() {
-  const [items, setItems] = useState<Summary[]>(() => read());
-
+  // Bump on every change so subscribed components re-render.
+  const [, setTick] = useState(0);
   useEffect(() => {
-    const handler = () => setItems(read());
-    window.addEventListener("storage", handler);
-    window.addEventListener(EVT, handler);
+    const fn = () => setTick((t) => t + 1);
+    subscribers.add(fn);
     return () => {
-      window.removeEventListener("storage", handler);
-      window.removeEventListener(EVT, handler);
+      subscribers.delete(fn);
     };
   }, []);
 
-  const persist = (next: Summary[]) => {
-    setItems(next);
-    localStorage.setItem(KEY, JSON.stringify(next));
-    window.dispatchEvent(new Event(EVT));
-  };
+  const items = Array.from(store.values());
 
-  const has = useCallback(
-    (pmid: string) => items.some((s) => s.pmid === pmid),
-    [items],
-  );
+  const has = useCallback((pmid: string) => store.has(pmid), []);
 
-  const toggle = useCallback(
-    (summary: Summary) => {
-      const exists = items.some((s) => s.pmid === summary.pmid);
-      persist(exists ? items.filter((s) => s.pmid !== summary.pmid) : [...items, summary]);
-    },
-    [items],
-  );
+  const toggle = useCallback((summary: Summary) => {
+    if (store.has(summary.pmid)) store.delete(summary.pmid);
+    else store.set(summary.pmid, summary);
+    emit();
+  }, []);
 
-  const remove = useCallback(
-    (pmid: string) => persist(items.filter((s) => s.pmid !== pmid)),
-    [items],
-  );
+  const remove = useCallback((pmid: string) => {
+    store.delete(pmid);
+    emit();
+  }, []);
 
-  const clear = useCallback(() => persist([]), []);
+  const clear = useCallback(() => {
+    store.clear();
+    emit();
+  }, []);
 
   return { items, has, toggle, remove, clear };
 }

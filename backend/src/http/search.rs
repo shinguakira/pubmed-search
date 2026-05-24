@@ -59,6 +59,11 @@ pub async fn search(
                 .efetch_bulk(&web_env, query_key, 0, q.page_size)
                 .await?
         };
+        // Populate the process-local article cache so a subsequent
+        // /api/article/{pmid} call for any PMID on this page is served
+        // from memory in microseconds. *This* is where the bulk speedup
+        // lands for the user — frontend stays dumb.
+        state.articles.put_many(details.iter().cloned());
         // Map ArticleDetail → Summary for the list view.
         let summaries: Vec<Summary> = details.iter().map(summary_from_detail).collect();
         (summaries, Some(details), es.count, es.querytranslation)

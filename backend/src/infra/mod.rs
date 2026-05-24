@@ -4,4 +4,5 @@
 //!
 //! Add a sibling module per IO concern (`ncbi`, `db`, `cache`, …).
 
+pub mod cache;
 pub mod ncbi;

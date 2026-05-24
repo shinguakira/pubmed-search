@@ -6,7 +6,7 @@ use utoipa::ToSchema;
 /// Returned by `GET /api/article/{pmid}`. Compared to `Summary`,
 /// this carries the abstract text, author affiliations, MeSH terms,
 /// and author-supplied keywords.
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ArticleDetail {
     /// PubMed unique identifier, echoed back from the request.
     pub pmid: String,
@@ -51,7 +51,7 @@ pub struct ArticleDetail {
 /// All fields default to empty string when NCBI omits them — typically
 /// when an author has only a collective name, or when affiliation isn't
 /// indexed.
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Author {
     /// Family name as it appears in the article.
     pub last_name: String,

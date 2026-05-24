@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
   BookmarkCheck,
@@ -9,7 +8,7 @@ import {
   Quote,
 } from "lucide-react";
 
-import { getArticle } from "@/lib/api";
+import { getArticle, type ArticleDetail } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -24,16 +23,33 @@ export function ArticlePage() {
   const [savedOpen, setSavedOpen] = useState(false);
   const { has, toggle } = useSaved();
 
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["article", pmid],
-    queryFn: () => getArticle(pmid),
-    enabled: Boolean(pmid),
-  });
+  const [data, setData] = useState<ArticleDetail | undefined>();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | undefined>();
+
+  const inflight = useRef(0);
+  useEffect(() => {
+    if (!pmid) return;
+    const myReq = ++inflight.current;
+    setLoading(true);
+    setError(undefined);
+    setData(undefined);
+    getArticle(pmid)
+      .then((d) => {
+        if (inflight.current === myReq) setData(d);
+      })
+      .catch((e) => {
+        if (inflight.current === myReq) setError(e as Error);
+      })
+      .finally(() => {
+        if (inflight.current === myReq) setLoading(false);
+      });
+  }, [pmid]);
 
   const saved = has(pmid);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50/60 via-white to-white">
+    <div className="min-h-screen bg-paper-light text-paper-ink">
       <Header onOpenSaved={() => setSavedOpen(true)} />
       <div className="container py-6">
         <Link
@@ -44,7 +60,7 @@ export function ArticlePage() {
           Back to results
         </Link>
 
-        {isLoading && (
+        {loading && (
           <div className="mt-6 space-y-3">
             <div className="h-8 w-3/4 animate-pulse rounded bg-muted" />
             <div className="h-4 w-1/2 animate-pulse rounded bg-muted/60" />
@@ -52,9 +68,9 @@ export function ArticlePage() {
           </div>
         )}
 
-        {isError && (
+        {error && (
           <div className="mt-6 rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
-            {(error as Error).message}
+            {error.message}
           </div>
         )}
 

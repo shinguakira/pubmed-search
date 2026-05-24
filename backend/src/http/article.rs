@@ -23,6 +23,14 @@ pub async fn article(
     State(state): State<AppState>,
     Path(pmid): Path<String>,
 ) -> Result<Json<ArticleDetail>, AppError> {
+    // Fast path: served from the in-memory cache populated by a prior
+    // bulk search. No NCBI round-trip.
+    if let Some(cached) = state.articles.get(&pmid) {
+        return Ok(Json(cached));
+    }
+    // Miss: hit NCBI and store the result so the next caller for the
+    // same PMID is fast.
     let detail = state.ncbi.efetch_abstract(&pmid).await?;
+    state.articles.put(detail.clone());
     Ok(Json(detail))
 }

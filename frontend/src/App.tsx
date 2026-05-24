@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { Header } from "@/components/Header";
@@ -15,7 +14,7 @@ import { ResultItem } from "@/components/ResultItem";
 import { Pagination } from "@/components/Pagination";
 import { CiteDialog } from "@/components/CiteDialog";
 import { SavedDialog } from "@/components/SavedDialog";
-import { search } from "@/lib/api";
+import { search, type SearchResponse } from "@/lib/api";
 
 export default function App() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -25,7 +24,6 @@ export default function App() {
   const pageSize = Number(searchParams.get("ps") ?? "20");
   const display = searchParams.get("display") ?? "summary";
   const bulk = searchParams.get("bulk") === "1";
-  const queryClient = useQueryClient();
 
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [citePmid, setCitePmid] = useState<string | null>(null);
@@ -43,33 +41,44 @@ export default function App() {
   const fragments = filtersToQueryFragments(filters);
   const enabled = term.trim().length > 0;
 
-  const query = useQuery({
-    enabled,
-    queryKey: ["search", term, page, pageSize, sort, fragments.join("|"), bulk],
-    queryFn: async () => {
-      const res = await search({
-        term,
-        page,
-        pageSize,
-        sort,
-        filters: fragments,
-        bulk,
-      });
-      // Bulk mode prewarms the per-PMID article cache so detail clicks
-      // are instant — `useQuery(["article", pmid])` on ArticlePage
-      // becomes a cache hit instead of an NCBI roundtrip.
-      if (res.details) {
-        for (const d of res.details) {
-          queryClient.setQueryData(["article", d.pmid], d);
-        }
-      }
-      return res;
-    },
-    placeholderData: keepPreviousData,
-  });
+  const [data, setData] = useState<SearchResponse | undefined>();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | undefined>();
+
+  // Cancel in-flight requests when params change so a slow earlier call
+  // never overwrites a faster later one.
+  const inflight = useRef(0);
+  const key = `${term}|${page}|${pageSize}|${sort}|${fragments.join(",")}|${bulk}`;
 
   useEffect(() => {
-    // reset to page 1 when filters change
+    if (!enabled) {
+      setData(undefined);
+      return;
+    }
+    const myReq = ++inflight.current;
+    setLoading(true);
+    setError(undefined);
+    search({
+      term,
+      page,
+      pageSize,
+      sort,
+      filters: fragments,
+      bulk,
+    })
+      .then((res) => {
+        if (inflight.current === myReq) setData(res);
+      })
+      .catch((e) => {
+        if (inflight.current === myReq) setError(e as Error);
+      })
+      .finally(() => {
+        if (inflight.current === myReq) setLoading(false);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, enabled]);
+
+  useEffect(() => {
     if (page !== 1) setParam({ page: 1 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fragments.join("|"), term, sort, pageSize]);
@@ -77,10 +86,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-paper-light text-paper-ink">
       <Header onOpenSaved={() => setSavedOpen(true)} />
-      <SearchBar
-        value={term}
-        onSubmit={(t) => setParam({ q: t, page: 1 })}
-      />
+      <SearchBar value={term} onSubmit={(t) => setParam({ q: t, page: 1 })} />
 
       {!enabled ? (
         <EmptyState onPick={(t) => setParam({ q: t, page: 1 })} />
@@ -97,9 +103,9 @@ export default function App() {
                   ── The PubMed Gazette · vol. 1 ──
                 </p>
                 <ResultsToolbar
-                  total={query.data?.count ?? 0}
-                  query={query.data?.query_translation ?? term}
-                  elapsedMs={query.data?.elapsed_ms}
+                  total={data?.count ?? 0}
+                  query={data?.query_translation ?? term}
+                  elapsedMs={data?.elapsed_ms}
                   sort={sort}
                   onSortChange={(s) => setParam({ sort: s })}
                   pageSize={pageSize}
@@ -112,21 +118,22 @@ export default function App() {
               </div>
 
               <div className="px-6 py-2">
-                {query.isError && (
+                {error && (
                   <div className="my-4 rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
-                    {(query.error as Error).message}
+                    {error.message}
                   </div>
                 )}
 
-                {query.isLoading ? (
+                {loading && !data ? (
                   <ResultsSkeleton />
-                ) : query.data?.results.length === 0 ? (
+                ) : data?.results.length === 0 ? (
                   <div className="py-16 text-center font-serif italic text-paper-brown">
-                    No dispatches found. Try broadening the search or removing filters.
+                    No dispatches found. Try broadening the search or removing
+                    filters.
                   </div>
                 ) : (
                   <div>
-                    {query.data?.results.map((r, i) => (
+                    {data?.results.map((r, i) => (
                       <ResultItem
                         key={r.pmid}
                         index={(page - 1) * pageSize + i + 1}
@@ -139,12 +146,12 @@ export default function App() {
                 )}
               </div>
 
-              {query.data && query.data.count > 0 && (
+              {data && data.count > 0 && (
                 <div className="border-t border-paper-rule/60 bg-paper-dark/40 px-6">
                   <Pagination
                     page={page}
                     pageSize={pageSize}
-                    total={query.data.count}
+                    total={data.count}
                     onPageChange={(p) => setParam({ page: p })}
                   />
                 </div>

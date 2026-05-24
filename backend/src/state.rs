@@ -5,11 +5,16 @@
 //! Redis client, feature-flag store, …). Keep it `Clone` (each inner
 //! type should be cheap to clone — wrap heavy things in `Arc`).
 
+use crate::infra::cache::ArticleCache;
 use crate::infra::ncbi;
 
 #[derive(Clone)]
 pub struct AppState {
     pub ncbi: ncbi::Client,
+    /// Process-local cache of fetched `ArticleDetail` records. Populated
+    /// by bulk search, consumed by /api/article/{pmid}. Lives until
+    /// process restart.
+    pub articles: ArticleCache,
     // Future additions:
     // pub db: sqlx::PgPool,
     // pub config: std::sync::Arc<Config>,
@@ -19,6 +24,7 @@ impl AppState {
     pub fn new() -> Self {
         Self {
             ncbi: ncbi::Client::new(),
+            articles: ArticleCache::new(),
         }
     }
 }

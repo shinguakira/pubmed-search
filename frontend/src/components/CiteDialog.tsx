@@ -1,6 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 import { Copy, Check } from "lucide-react";
-import { useState } from "react";
 import { getCite, type CiteResponse } from "@/lib/api";
 import {
   Dialog,
@@ -26,11 +25,27 @@ const FORMATS: { id: keyof CiteResponse; label: string }[] = [
 ];
 
 export function CiteDialog({ pmid, onOpenChange }: Props) {
-  const { data, isLoading } = useQuery({
-    enabled: Boolean(pmid),
-    queryKey: ["cite", pmid],
-    queryFn: () => getCite(pmid!),
-  });
+  const [data, setData] = useState<CiteResponse | undefined>();
+  const [loading, setLoading] = useState(false);
+  const inflight = useRef(0);
+
+  useEffect(() => {
+    if (!pmid) {
+      setData(undefined);
+      return;
+    }
+    const myReq = ++inflight.current;
+    setLoading(true);
+    setData(undefined);
+    getCite(pmid)
+      .then((d) => {
+        if (inflight.current === myReq) setData(d);
+      })
+      .finally(() => {
+        if (inflight.current === myReq) setLoading(false);
+      });
+  }, [pmid]);
+
   const [copied, setCopied] = useState<string | null>(null);
 
   const copy = (key: string, text: string) => {
@@ -50,7 +65,7 @@ export function CiteDialog({ pmid, onOpenChange }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        {isLoading || !data ? (
+        {loading || !data ? (
           <div className="h-40 animate-pulse rounded-md bg-muted" />
         ) : (
           <Tabs defaultValue="ama" className="w-full">
