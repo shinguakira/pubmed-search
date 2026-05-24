@@ -1,24 +1,53 @@
-# pubmed-search
+# The PubMed Gazette
 
-PubMed-style biomedical-literature search PoC.
+A newspaper-styled PubMed search reader.
 
-- **Backend**: Rust + Axum — proxies NCBI E-utilities (`esearch`, `esummary`, `efetch`), keeps the API key server-side and avoids CORS issues.
-- **Frontend**: Vite + React + TypeScript + TailwindCSS + shadcn/ui — UI layout and search controls mirror PubMed, restyled with shadcn.
+![Screenshot](docs/screenshot.png)
+
+## What this is for
+
+PubMed already works fine — this app is a thin, polished reading shell on top of it.
+Built for people who skim a lot of biomedical citations and want a calmer surface to
+do it on. A few specific things it makes nicer than the real site:
+
+- **Less chrome, more content.** Full-width layout, tighter article rows, no banner
+  ads or recommendations panel. You scan more results per screen.
+- **A coherent reading aesthetic.** Serif typography, parchment palette, small-caps
+  metadata — the citation list reads like a journal index instead of a search-results
+  page.
+- **Shareable URLs.** `?q=`, `?page=`, `?sort=`, `?ps=`, `?display=` all live in the
+  URL, so you can bookmark or send a search.
+- **Local saves & one-click cite.** Bookmark articles to localStorage (export as JSON
+  later); copy citations as AMA / APA / MLA / NLM / BibTeX.
+- **Same PubMed search grammar.** Field tags (`[ti]`, `[au]`, `[mesh]`, `[dp]`, …) and
+  the boolean Advanced builder work exactly as on PubMed — the Rust backend is a thin
+  proxy around NCBI E-utilities (`esearch` / `esummary` / `efetch`).
+
+It is **not** a replacement for PubMed, and it has no account, alerts, or
+clipboard/bibliography sync to NCBI. Think of it as a personal reading room.
+
+## Stack
+
+| Layer        | Tech                                                          |
+|--------------|---------------------------------------------------------------|
+| Frontend     | Vite · React · TypeScript · TailwindCSS · shadcn/ui            |
+| Backend      | Rust · Axum · reqwest · quick-xml (proxies NCBI E-utilities)   |
+| Dev wiring   | npm workspaces · concurrently · direct CORS (no Vite proxy)    |
 
 ## Layout
 
 ```
 pubmed-search/
-├── backend/         Rust + Axum API at http://localhost:8787
+├── backend/            Rust + Axum API at http://localhost:8787
 │   ├── Cargo.toml
 │   └── src/
 │       ├── main.rs
-│       ├── pubmed.rs   NCBI E-utilities client + XML parser
+│       ├── pubmed.rs   NCBI E-utilities client + PubMed XML parser
 │       └── routes.rs   /api/search, /api/article/:pmid, /api/mesh, /api/cite/:pmid
-└── frontend/        Vite dev server at http://localhost:5173 (calls backend directly via CORS)
+└── frontend/           Vite dev server at http://localhost:5173 (CORS, no proxy)
     ├── package.json
     └── src/
-        ├── App.tsx               Search page
+        ├── App.tsx              Search page
         ├── pages/ArticlePage.tsx Article detail
         ├── components/
         │   ├── Header.tsx
@@ -30,8 +59,8 @@ pubmed-search/
         │   ├── Pagination.tsx
         │   ├── CiteDialog.tsx
         │   ├── SavedDialog.tsx
-        │   └── ui/               shadcn primitives
-        └── lib/api.ts            Typed client for the backend
+        │   └── ui/              shadcn primitives
+        └── lib/api.ts           Typed client for the backend
 ```
 
 ## Run
@@ -77,17 +106,22 @@ npm run start   # cargo run --release + vite preview
 
 | Area              | Notes                                                                  |
 |-------------------|------------------------------------------------------------------------|
-| Top search bar    | Single input + Search; matches PubMed entry point                     |
-| Advanced builder  | Boolean rows (AND/OR/NOT) + field tags ([ti], [au], [mesh], [dp]…)    |
-| Filter sidebar    | Publication date, article type, species, language, sex, age, text     |
-| Results list      | Numbered items, citation metadata, PMID/DOI/PubType chips             |
-| Sort & paging     | Best match / recent / first author / journal / title, 10/20/50/100   |
-| Article detail    | Abstract (structured), authors, affiliations, MeSH, keywords          |
-| Cite              | AMA / APA / MLA / NLM / BibTeX with one-click copy                    |
-| Save              | LocalStorage-backed, JSON export                                      |
-| URL state         | `?q=…&page=…&sort=…&ps=…` — shareable searches                        |
+| Top search bar    | Single input + Search; matches PubMed entry point                      |
+| Advanced builder  | Boolean rows (AND/OR/NOT) + field tags ([ti], [au], [mesh], [dp]…)     |
+| Filter sidebar    | Publication date, Text availability, Article attribute, Article type,  |
+|                   | Language, Species, Sex, Age, Other — same order as PubMed              |
+| Results list      | Numbered article rows, citation metadata, PMID/PubType chips           |
+| Sort, display     | Best match / recent / first author / journal / title · Summary / PMID  |
+| Article detail    | Abstract (structured), authors, affiliations, MeSH, keywords           |
+| Cite              | AMA / APA / MLA / NLM / BibTeX with one-click copy                     |
+| Save              | LocalStorage-backed, JSON export                                       |
+| URL state         | `?q=…&page=…&sort=…&ps=…&display=…` — shareable searches               |
 
 ## Notes
 
-- NCBI rate limits: 3 req/s anonymous, 10 req/s with API key. The backend sends `tool`/`email` per NCBI guidelines.
-- The Rust backend is intentionally a thin proxy — no DB, no auth. Add Redis/PG later if you want cached searches or accounts.
+- NCBI rate limits: 3 req/s anonymous, 10 req/s with API key. The backend sends
+  `tool` / `email` per NCBI guidelines.
+- The Rust backend is intentionally a thin proxy — no DB, no auth. Add Redis/PG
+  later if you want cached searches or accounts.
+- No Vite dev proxy: the frontend calls the Rust backend directly. CORS is enabled
+  on the backend, and `VITE_API_URL` lets you override the default `http://127.0.0.1:8787`.
