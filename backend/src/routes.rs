@@ -1,3 +1,22 @@
+//! HTTP controllers.
+//!
+//! Each public `async fn` here is an Axum handler. A few Rust-isms you'll
+//! see repeatedly:
+//!
+//! * `State<Client>` — Axum-injected shared dependency (the NCBI HTTP
+//!   client), set up once in `lib.rs::build_router`.
+//! * `Query<T>` / `Path<T>` — request data, parsed into typed structs.
+//!   Equivalent to FastAPI's `Query`/`Path` or Express's `req.query`/
+//!   `req.params`.
+//! * `Json<T>` — response body. Serializing to JSON happens automatically
+//!   for any type that `derive`s `Serialize`.
+//! * `#[utoipa::path(...)]` — pure metadata for OpenAPI generation, no
+//!   runtime effect. Required: see `lib.rs` for the strict check.
+//! * `Result<Json<T>, ApiError>` — happy path returns 200 + JSON,
+//!   `ApiError` turns into a 500 with a JSON body (see bottom of file).
+//!
+//! The actual NCBI calls live in `pubmed.rs`; this file is *just* HTTP wiring.
+
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
@@ -10,6 +29,9 @@ use utoipa::{IntoParams, ToSchema};
 
 use crate::pubmed::{ArticleDetail, Client, Summary};
 
+// `IntoParams` makes utoipa render each `pub` field below as an OpenAPI
+// query parameter. `Deserialize` lets Axum populate the struct from the
+// query string.
 #[derive(Debug, Deserialize, IntoParams)]
 pub struct SearchQuery {
     /// Free-text PubMed query, e.g. `crispr cas9` or `covid 2024[dp]`.
@@ -33,6 +55,8 @@ fn default_page_size() -> u32 {
     20
 }
 
+// `Serialize` = "this struct can be turned into JSON".
+// `ToSchema`  = "include this in the generated OpenAPI components".
 #[derive(Debug, Serialize, ToSchema)]
 pub struct SearchResponse {
     pub count: u32,
@@ -65,18 +89,29 @@ pub async fn search(
     State(client): State<Client>,
     Query(q): Query<SearchQuery>,
 ) -> Result<Json<SearchResponse>, ApiError> {
+    // Measure server-side processing time so the frontend can show "0.42s".
     let started = Instant::now();
+
+    // Combine the user's term with each sidebar filter as `(term) AND filter`.
+    // This is the same boolean grammar PubMed itself uses.
     let mut term = q.term.trim().to_string();
     if let Some(f) = q.filters.as_ref() {
         for filt in f.split(',').map(str::trim).filter(|s| !s.is_empty()) {
             term = format!("({term}) AND {filt}");
         }
     }
+
+    // NCBI uses 0-based offsets; we accept 1-based page numbers.
     let retstart = q.page.saturating_sub(1) * q.page_size;
+
+    // Two upstream calls: `esearch` returns IDs + total count,
+    // `esummary` hydrates those IDs into titles/authors/journals.
+    // `.await?` = "await this future, propagate any error up".
     let es = client
         .esearch("pubmed", &term, retstart, q.page_size, q.sort.as_deref())
         .await?;
     let summaries = client.esummary("pubmed", &es.ids).await?;
+
     Ok(Json(SearchResponse {
         count: es.count,
         page: q.page,
@@ -275,12 +310,22 @@ pub async fn cite(
     Ok(Json(CiteResponse { ama, apa, mla, nlm, bibtex }))
 }
 
+/// Newtype wrapper around `anyhow::Error` so we can implement the
+/// `IntoResponse` trait for it — Axum requires every handler's `Err`
+/// to know how to become an HTTP response.
 pub struct ApiError(anyhow::Error);
+
+/// Blanket `From` impl: anything that can become `anyhow::Error`
+/// (i.e. any error in this codebase) auto-converts via the `?`
+/// operator. This is what lets `client.esearch(...).await?` just work.
 impl<E: Into<anyhow::Error>> From<E> for ApiError {
     fn from(e: E) -> Self {
         ApiError(e.into())
     }
 }
+
+/// Turn the wrapped error into a 500 with a JSON body. Shape matches
+/// the `ErrorBody` schema declared in OpenAPI above.
 impl IntoResponse for ApiError {
     fn into_response(self) -> axum::response::Response {
         tracing::error!("api error: {:?}", self.0);

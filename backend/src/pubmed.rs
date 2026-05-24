@@ -1,3 +1,19 @@
+//! NCBI E-utilities client + a small XML parser for `efetch` responses.
+//!
+//! This module is the only place in the crate that talks to the public
+//! internet. Everything else (routes, OpenAPI, tests) goes through `Client`.
+//!
+//! What each upstream endpoint does (NCBI naming):
+//!
+//! * **esearch** — given a query string, returns a list of PMIDs + total hit count.
+//! * **esummary** — given PMIDs, returns short metadata (title, authors, journal).
+//! * **efetch**  — given a single PMID, returns the full record as XML
+//!   (abstract, MeSH, affiliations…). We parse only the fields we need.
+//!
+//! `Client` is `Clone` so Axum can hand a copy to each request via `State`
+//! without locking — `reqwest::Client` itself is cheap to clone (it shares
+//! the underlying connection pool internally).
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use utoipa::ToSchema;
@@ -36,6 +52,9 @@ impl Client {
         v
     }
 
+    /// Call NCBI `esearch.fcgi`. Returns the IDs that match `term`, the
+    /// total result count, and the human-readable translation NCBI used
+    /// (e.g. expanding `crispr` to its MeSH synonyms).
     pub async fn esearch(
         &self,
         db: &str,
@@ -65,6 +84,8 @@ impl Client {
         Ok(EsearchResult { count, ids, querytranslation })
     }
 
+    /// Call NCBI `esummary.fcgi`. Hydrates a batch of PMIDs into the
+    /// short metadata shown in the results list (title/authors/journal/…).
     pub async fn esummary(&self, db: &str, ids: &[String]) -> anyhow::Result<Vec<Summary>> {
         if ids.is_empty() {
             return Ok(vec![]);
@@ -128,6 +149,11 @@ impl Client {
         Ok(out)
     }
 
+    /// Call NCBI `efetch.fcgi` for a single PMID and walk the returned
+    /// PubmedArticle XML to pull out the fields we surface in the UI:
+    /// title, structured abstract (BACKGROUND / METHODS / …), authors +
+    /// affiliations, journal, pub date, DOI, keywords, MeSH terms,
+    /// publication types.
     pub async fn efetch_abstract(&self, pmid: &str) -> anyhow::Result<ArticleDetail> {
         let mut params = self.base_params();
         params.push(("db", "pubmed".into()));
@@ -184,6 +210,14 @@ pub struct Author {
     pub affiliation: String,
 }
 
+/// Streaming PubMed XML walker.
+///
+/// We don't deserialize the whole document — PubmedArticle records are
+/// deeply nested and the fields we care about are scattered across many
+/// element paths. So we walk events (`<x>`, `</x>`, text) with quick-xml
+/// and keep a tiny stack (`path`) of the current ancestor element names.
+/// When we see character data, we look at the top of the stack to decide
+/// what to do with it (e.g. "we're inside `<ArticleTitle>`, so append").
 fn parse_pubmed_xml(xml: &str, pmid: &str) -> anyhow::Result<ArticleDetail> {
     use quick_xml::events::Event;
     use quick_xml::reader::Reader;
