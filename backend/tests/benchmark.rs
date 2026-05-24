@@ -77,19 +77,32 @@ async fn benchmark_indiv_vs_bulk_across_scenarios() {
 
     let client = Client::new();
 
-    // (term, N) — kept small enough that INDIV stays under ~30s each.
+    // (term, N) — mix of specific phrases, mid-volume topics, and
+    // very-common words. N is kept ≤ 50 so INDIV stays under ~30 s.
+    // Total NCBI hit counts vary by 4 orders of magnitude; bulk's
+    // speedup is expected to be roughly the same regardless of
+    // result-set size, since both paths only fetch the first N records.
     let scenarios: &[(&str, u32)] = &[
+        // Specific phrase, narrow result set (~70k hits).
         ("crispr cas9", 10),
-        ("covid", 20),
-        ("alzheimer review", 30),
         ("crispr cas9", 50),
+        // Mid-volume medical terms (~tens of thousands of hits).
+        ("glaucoma", 20),
+        ("OCT", 20),
+        // High-volume topics (~hundreds of thousands of hits).
+        ("alzheimer", 30),
+        ("covid", 30),
+        // Generic word, massive corpus (~millions of hits).
+        ("cancer", 30),
+        ("diabetes", 30),
     ];
 
     eprintln!(
-        "\n{:─^72}\n{:<22} {:>5} {:>11} {:>11} {:>9} {:>9}\n{:─^72}",
+        "\n{:─^82}\n{:<22} {:>5} {:>10} {:>11} {:>11} {:>9} {:>9}\n{:─^82}",
         " BENCH: indiv vs bulk ",
         "term",
         "N",
+        "hits",
         "indiv (s)",
         "bulk (s)",
         "saved",
@@ -104,7 +117,7 @@ async fn benchmark_indiv_vs_bulk_across_scenarios() {
             .await
             .expect("esearch failed");
         let ids: Vec<String> = es.ids.iter().take(n as usize).cloned().collect();
-        // Small inter-scenario rest so we don't burst NCBI.
+        let hits = es.count;
         tokio::time::sleep(Duration::from_millis(500)).await;
 
         // Step 2: time INDIV (slow path).
@@ -117,9 +130,10 @@ async fn benchmark_indiv_vs_bulk_across_scenarios() {
         let saved = indiv.checked_sub(bulk).unwrap_or_default();
         let speedup = indiv.as_secs_f64() / bulk.as_secs_f64();
         eprintln!(
-            "{:<22} {:>5} {:>11.2} {:>11.2} {:>8.2}s {:>8.1}x",
+            "{:<22} {:>5} {:>10} {:>11.2} {:>11.2} {:>8.2}s {:>8.1}x",
             truncate(term, 22),
             n,
+            human_count(hits),
             indiv.as_secs_f64(),
             bulk.as_secs_f64(),
             saved.as_secs_f64(),
@@ -135,7 +149,17 @@ async fn benchmark_indiv_vs_bulk_across_scenarios() {
         // Polite inter-scenario delay.
         tokio::time::sleep(Duration::from_millis(800)).await;
     }
-    eprintln!("{:─^72}", "");
+    eprintln!("{:─^82}", "");
+}
+
+fn human_count(n: u32) -> String {
+    if n >= 1_000_000 {
+        format!("{:.1}M", n as f64 / 1_000_000.0)
+    } else if n >= 1_000 {
+        format!("{:.0}k", n as f64 / 1_000.0)
+    } else {
+        n.to_string()
+    }
 }
 
 fn truncate(s: &str, n: usize) -> String {
