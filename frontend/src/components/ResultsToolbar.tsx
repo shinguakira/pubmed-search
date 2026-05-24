@@ -28,7 +28,7 @@ export function ResultsToolbar({
   onDisplayChange,
 }: Props) {
   return (
-    <div className="flex flex-col gap-2 border-b py-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-2 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
         <p className="text-2xl font-semibold tracking-tight text-foreground">
           {total.toLocaleString()}{" "}

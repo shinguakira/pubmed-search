@@ -73,53 +73,74 @@ export default function App() {
         <EmptyState onPick={(t) => setParam({ q: t, page: 1 })} />
       ) : (
         <main className="container py-6">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-[240px_minmax(0,1fr)] lg:grid-cols-[260px_minmax(0,1fr)]">
-            <FiltersSidebar value={filters} onChange={setFilters} />
-            <section className="min-w-0">
-              <ResultsToolbar
-                total={query.data?.count ?? 0}
-                query={query.data?.query_translation ?? term}
-                sort={sort}
-                onSortChange={(s) => setParam({ sort: s })}
-                pageSize={pageSize}
-                onPageSizeChange={(n) => setParam({ ps: n, page: 1 })}
-                display={display}
-                onDisplayChange={(d) => setParam({ display: d })}
-              />
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-[260px_minmax(0,1fr)] lg:grid-cols-[280px_minmax(0,1fr)]">
+            <aside className="rounded-xl border bg-card p-4 shadow-sm">
+              <FiltersSidebar value={filters} onChange={setFilters} />
+            </aside>
 
-              {query.isError && (
-                <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
-                  {(query.error as Error).message}
-                </div>
-              )}
+            <section className="min-w-0 rounded-xl border bg-card shadow-sm">
+              <div className="px-5 pt-4">
+                <ResultsToolbar
+                  total={query.data?.count ?? 0}
+                  query={query.data?.query_translation ?? term}
+                  sort={sort}
+                  onSortChange={(s) => setParam({ sort: s })}
+                  pageSize={pageSize}
+                  onPageSizeChange={(n) => setParam({ ps: n, page: 1 })}
+                  display={display}
+                  onDisplayChange={(d) => setParam({ display: d })}
+                />
+              </div>
 
-              {query.isLoading ? (
-                <ResultsSkeleton />
-              ) : query.data?.results.length === 0 ? (
-                <div className="py-16 text-center text-sm text-muted-foreground">
-                  No results. Try broadening your search or removing filters.
-                </div>
-              ) : (
-                <div>
-                  {query.data?.results.map((r, i) => (
-                    <ResultItem
-                      key={r.pmid}
-                      index={(page - 1) * pageSize + i + 1}
-                      item={r}
-                      display={display}
-                      onCite={setCitePmid}
-                    />
-                  ))}
-                </div>
-              )}
+              <div className="px-5 py-4">
+                {query.isError && (
+                  <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+                    {(query.error as Error).message}
+                  </div>
+                )}
+
+                {query.isLoading ? (
+                  <ResultsSkeleton />
+                ) : query.data?.results.length === 0 ? (
+                  <div className="py-16 text-center text-sm text-muted-foreground">
+                    No results. Try broadening your search or removing filters.
+                  </div>
+                ) : display === "pmid" ? (
+                  <div>
+                    {query.data?.results.map((r, i) => (
+                      <ResultItem
+                        key={r.pmid}
+                        index={(page - 1) * pageSize + i + 1}
+                        item={r}
+                        display={display}
+                        onCite={setCitePmid}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                    {query.data?.results.map((r, i) => (
+                      <ResultItem
+                        key={r.pmid}
+                        index={(page - 1) * pageSize + i + 1}
+                        item={r}
+                        display={display}
+                        onCite={setCitePmid}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {query.data && query.data.count > 0 && (
-                <Pagination
-                  page={page}
-                  pageSize={pageSize}
-                  total={query.data.count}
-                  onPageChange={(p) => setParam({ page: p })}
-                />
+                <div className="border-t px-5">
+                  <Pagination
+                    page={page}
+                    pageSize={pageSize}
+                    total={query.data.count}
+                    onPageChange={(p) => setParam({ page: p })}
+                  />
+                </div>
               )}
             </section>
           </div>
