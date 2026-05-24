@@ -101,7 +101,7 @@ Key invariants:
 | `src/state.rs`          | `AppState` — shared deps (`ncbi` client, future DB pool) injected into handlers. |
 | `src/error.rs`          | `AppError` enum + `ErrorResponse` body + `IntoResponse` (single HTTP mapping). |
 | `src/http/mod.rs`       | `ApiDoc` + `build(state)` → `(Router, OpenApi)` via `OpenApiRouter::routes!()`. |
-| `src/http/{search,article,mesh,cite}.rs` | One handler per file, owns its `*Query`/`*Response` DTOs + `#[utoipa::path]`. |
+| `src/http/{search,article,mesh,cite}.rs` | One handler per file. `search` has a `bulk` query param that switches between `esearch+esummary` (default) and `esearch(usehistory)+efetch_bulk` (returns full `ArticleDetail[]` in `details` for client-side cache prewarm). |
 | `src/infra/ncbi/`       | NCBI client split per endpoint (`client.rs`, `esearch.rs`, `esummary.rs`, `efetch.rs`, `xml.rs`, `types.rs`). |
 | `src/infra/db/`         | (Empty placeholder.) Future: sqlx pool + repository modules. |
 | `src/domain/`           | (Empty placeholder.) Future: pure logic (citation generation, search-query construction) extracted from `http/` for unit testing without IO. |

@@ -11,7 +11,6 @@ fn every_expected_route_is_in_the_spec() {
 
     for expected in [
         "/api/search",
-        "/api/search/export",
         "/api/article/{pmid}",
         "/api/mesh",
         "/api/cite/{pmid}",

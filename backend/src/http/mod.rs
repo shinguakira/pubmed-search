@@ -19,7 +19,6 @@ use crate::state::AppState;
 pub mod article;
 pub mod cite;
 pub mod dto;
-pub mod export;
 pub mod mesh;
 pub mod search;
 
@@ -43,7 +42,6 @@ pub fn build(state: AppState) -> (Router, utoipa::openapi::OpenApi) {
         .routes(routes!(article::article))
         .routes(routes!(mesh::mesh_suggest))
         .routes(routes!(cite::cite))
-        .routes(routes!(export::export))
         .with_state(state)
         .split_for_parts()
 }

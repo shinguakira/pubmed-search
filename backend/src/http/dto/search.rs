@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
-use crate::infra::ncbi::Summary;
+use crate::infra::ncbi::{ArticleDetail, Summary};
 
 /// Query parameters for `GET /api/search`.
 #[derive(Debug, Deserialize, IntoParams)]
@@ -30,6 +30,18 @@ pub struct SearchQuery {
     /// same `[tag]` syntax PubMed expects, e.g.
     /// `humans[Filter],english[lang],2020:2025[dp],Review[pt]`.
     pub filters: Option<String>,
+
+    /// When `true`, the handler hits NCBI via `esearch(usehistory=y)` +
+    /// `efetch_bulk` instead of `esearch` + `esummary`, and populates
+    /// the `details` field of the response with full
+    /// `ArticleDetail` records. Clients can prewarm a per-PMID cache
+    /// off this so subsequent article-detail clicks are instant.
+    ///
+    /// Trade-off: the initial response is slightly slower and heavier
+    /// (XML parse vs JSON), but the cumulative time across a "search →
+    /// open several articles" flow is dramatically lower.
+    #[serde(default)]
+    pub bulk: bool,
 }
 
 fn default_page() -> u32 {
@@ -53,15 +65,21 @@ pub struct SearchResponse {
     pub page_size: u32,
 
     /// The query as NCBI rewrote it after MeSH expansion and synonym
-    /// substitution. Useful for showing the user "we actually searched
-    /// for X" beneath the search box.
+    /// substitution.
     pub query_translation: String,
 
-    /// Server-side wall-clock duration for the upstream NCBI roundtrip
-    /// (esearch + esummary), in milliseconds. Network latency from the
-    /// browser to this server is *not* included.
+    /// Server-side wall-clock duration for the upstream NCBI roundtrip(s),
+    /// in milliseconds.
     pub elapsed_ms: u64,
 
-    /// Page slice of citation summaries (always ≤ `page_size`).
+    /// Page slice of citation summaries — always the rendering shape.
+    /// Built either from `esummary` (default) or from `efetch_bulk`
+    /// output mapped down to Summary fields (bulk mode).
     pub results: Vec<Summary>,
+
+    /// Full article records for the same page slice. Populated only
+    /// when the request asked for `bulk=true`. Same length and PMID
+    /// order as `results`. Use to prewarm a client-side article cache.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub details: Option<Vec<ArticleDetail>>,
 }

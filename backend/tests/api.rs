@@ -174,7 +174,7 @@ async fn article_returns_abstract_for_known_pmid() {
 }
 
 #[tokio::test]
-async fn export_returns_bulk_bibtex_in_one_roundtrip() {
+async fn search_bulk_returns_details_and_summary() {
     let _gate = ncbi_gate().lock().await;
     require_network!();
     tokio::time::sleep(Duration::from_millis(400)).await;
@@ -184,32 +184,65 @@ async fn export_returns_bulk_bibtex_in_one_roundtrip() {
     let started = Instant::now();
     let res = client
         .get(format!(
-            "{base}/api/search/export?term=crispr+cas9&format=bibtex&max=50"
+            "{base}/api/search?term=crispr+cas9&page_size=10&bulk=true"
         ))
         .send()
         .await
         .expect("request");
-    let ms = started.elapsed().as_millis();
-    assert_eq!(res.status(), 200, "non-200 from /api/search/export");
+    let total_ms = wall_ms(started);
+    assert_eq!(res.status(), 200);
+    let body: Value = res.json().await.expect("json");
 
-    let ct = res
-        .headers()
-        .get("content-type")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("")
-        .to_string();
-    let body = res.text().await.expect("text body");
-    let entries = body.matches("@article{pmid").count();
+    let results = body["results"].as_array().expect("results array");
+    let details = body["details"].as_array().expect("details present when bulk=true");
+    let elapsed_ms = body["elapsed_ms"].as_u64().unwrap();
+
     eprintln!(
-        "[export bibtex] wall_ms={ms} entries={entries} content_type={ct}"
+        "[search bulk=true] total_ms={total_ms} backend_elapsed_ms={elapsed_ms} \
+         results={} details={}",
+        results.len(),
+        details.len()
     );
 
-    assert!(ct.starts_with("application/x-bibtex"));
-    // We asked for 50; allow some slop in case NCBI returns fewer (rare).
+    assert_eq!(results.len(), 10);
+    assert_eq!(details.len(), 10, "details length must match results");
+
+    // Same PMID in same position.
+    for i in 0..results.len() {
+        assert_eq!(
+            results[i]["pmid"], details[i]["pmid"],
+            "pmid mismatch at position {i}"
+        );
+    }
+    // details carries the abstract (key thing the default path lacks).
+    assert!(details[0]["abstract_text"].is_string());
+}
+
+#[tokio::test]
+async fn search_default_omits_details() {
+    let _gate = ncbi_gate().lock().await;
+    require_network!();
+    tokio::time::sleep(Duration::from_millis(400)).await;
+    let base = spawn().await;
+    let client = http_client();
+
+    let body: Value = client
+        .get(format!("{base}/api/search?term=crispr&page_size=3"))
+        .send()
+        .await
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
     assert!(
-        entries >= 40,
-        "expected ~50 BibTeX entries, got {entries}"
+        body.get("details").map(|v| v.is_null()).unwrap_or(true),
+        "details must be absent (or null) when bulk is not set; got {:?}",
+        body.get("details")
     );
+}
+
+fn wall_ms(t: Instant) -> u128 {
+    t.elapsed().as_millis()
 }
 
 #[tokio::test]

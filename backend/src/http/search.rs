@@ -1,4 +1,8 @@
-//! `GET /api/search` — proxy NCBI esearch + esummary, with timing.
+//! `GET /api/search` — two paths:
+//! * **default**: esearch + esummary (fast, lightweight Summary).
+//! * **bulk=true**: esearch(usehistory=y) + efetch_bulk (heavier, but
+//!   returns full ArticleDetail per record so clients can prewarm an
+//!   article cache and make detail clicks instant).
 
 use axum::extract::{Query, State};
 use axum::Json;
@@ -7,6 +11,7 @@ use std::time::Instant;
 use crate::error::AppError;
 use crate::http::dto::error::ErrorResponse;
 use crate::http::dto::search::{SearchQuery, SearchResponse};
+use crate::infra::ncbi::{ArticleDetail, Summary};
 use crate::state::AppState;
 
 #[utoipa::path(
@@ -34,18 +39,80 @@ pub async fn search(
     }
     let retstart = q.page.saturating_sub(1) * q.page_size;
 
-    let es = state
-        .ncbi
-        .esearch("pubmed", &term, retstart, q.page_size, q.sort.as_deref(), false)
-        .await?;
-    let summaries = state.ncbi.esummary("pubmed", &es.ids).await?;
+    let (results, details, count, query_translation) = if q.bulk {
+        // Bulk path: esearch with History → efetch_bulk for the page slice.
+        let es = state
+            .ncbi
+            .esearch("pubmed", &term, retstart, q.page_size, q.sort.as_deref(), true)
+            .await?;
+        let details = if es.ids.is_empty() {
+            Vec::new()
+        } else {
+            let web_env = es
+                .web_env
+                .ok_or_else(|| anyhow::anyhow!("NCBI did not return WebEnv"))?;
+            let query_key = es
+                .query_key
+                .ok_or_else(|| anyhow::anyhow!("NCBI did not return QueryKey"))?;
+            state
+                .ncbi
+                .efetch_bulk(&web_env, query_key, 0, q.page_size)
+                .await?
+        };
+        // Map ArticleDetail → Summary for the list view.
+        let summaries: Vec<Summary> = details.iter().map(summary_from_detail).collect();
+        (summaries, Some(details), es.count, es.querytranslation)
+    } else {
+        // Default path: esearch + esummary (cheap).
+        let es = state
+            .ncbi
+            .esearch("pubmed", &term, retstart, q.page_size, q.sort.as_deref(), false)
+            .await?;
+        let summaries = state.ncbi.esummary("pubmed", &es.ids).await?;
+        (summaries, None, es.count, es.querytranslation)
+    };
 
     Ok(Json(SearchResponse {
-        count: es.count,
+        count,
         page: q.page,
         page_size: q.page_size,
-        query_translation: es.querytranslation,
+        query_translation,
         elapsed_ms: started.elapsed().as_millis() as u64,
-        results: summaries,
+        results,
+        details,
     }))
+}
+
+/// Build the list-row `Summary` from a `efetch` `ArticleDetail`.
+/// Fields not carried in efetch XML (epubdate, volume, issue, pages,
+/// lang, short author form, journal abbreviation) are left empty or
+/// derived as best we can — esummary is still the better source for
+/// those, which is why default search uses esummary.
+fn summary_from_detail(d: &ArticleDetail) -> Summary {
+    let authors_short: Vec<String> = d
+        .authors
+        .iter()
+        .map(|a| {
+            let initials: String = a
+                .fore_name
+                .split_whitespace()
+                .filter_map(|w| w.chars().next())
+                .collect();
+            format!("{} {}", a.last_name, initials).trim().to_string()
+        })
+        .collect();
+    Summary {
+        pmid: d.pmid.clone(),
+        title: d.title.clone(),
+        authors: authors_short,
+        source: d.journal.clone(),
+        pubdate: d.pubdate.clone(),
+        epubdate: String::new(),
+        volume: String::new(),
+        issue: String::new(),
+        pages: String::new(),
+        doi: d.doi.clone(),
+        pubtypes: d.pubtypes.clone(),
+        lang: String::new(),
+    }
 }

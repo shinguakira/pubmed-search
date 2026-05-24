@@ -204,6 +204,15 @@
                 "null"
               ]
             }
+          },
+          {
+            "name": "bulk",
+            "in": "query",
+            "description": "When `true`, the handler hits NCBI via `esearch(usehistory=y)` +\n`efetch_bulk` instead of `esearch` + `esummary`, and populates\nthe `details` field of the response with full\n`ArticleDetail` records. Clients can prewarm a per-PMID cache\noff this so subsequent article-detail clicks are instant.\n\nTrade-off: the initial response is slightly slower and heavier\n(XML parse vs JSON), but the cumulative time across a \"search →\nopen several articles\" flow is dramatically lower.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -216,84 +225,6 @@
                 }
               }
             }
-          },
-          "500": {
-            "description": "Upstream NCBI error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/search/export": {
-      "get": {
-        "tags": [
-          "pubmed"
-        ],
-        "operationId": "export",
-        "parameters": [
-          {
-            "name": "term",
-            "in": "query",
-            "description": "Free-text PubMed query (same grammar as `/api/search`).",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "filters",
-            "in": "query",
-            "description": "Comma-separated raw PubMed filter expressions (same shape as\n`/api/search`).",
-            "required": false,
-            "schema": {
-              "type": [
-                "string",
-                "null"
-              ]
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sort order. Same options as `/api/search`.",
-            "required": false,
-            "schema": {
-              "type": [
-                "string",
-                "null"
-              ]
-            }
-          },
-          {
-            "name": "max",
-            "in": "query",
-            "description": "Maximum number of records to bundle into the export. NCBI's\nper-call ceiling for `efetch` via History is 10,000; we clamp\nto that. Default: 200.",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "minimum": 0
-            }
-          },
-          {
-            "name": "format",
-            "in": "query",
-            "description": "Output format. One of: `bibtex`, `csv`, `json`.",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/ExportFormat"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Bulk export of the search result set. Response body type depends on the requested `format`: BibTeX text, CSV text, or a JSON array of ArticleDetail. The Content-Type header reflects this."
           },
           "500": {
             "description": "Upstream NCBI error",
@@ -514,10 +445,20 @@
             "description": "Total matching records in PubMed for this query (the whole corpus,\nnot just the current page).",
             "minimum": 0
           },
+          "details": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ArticleDetail"
+            },
+            "description": "Full article records for the same page slice. Populated only\nwhen the request asked for `bulk=true`. Same length and PMID\norder as `results`. Use to prewarm a client-side article cache."
+          },
           "elapsed_ms": {
             "type": "integer",
             "format": "int64",
-            "description": "Server-side wall-clock duration for the upstream NCBI roundtrip\n(esearch + esummary), in milliseconds. Network latency from the\nbrowser to this server is *not* included.",
+            "description": "Server-side wall-clock duration for the upstream NCBI roundtrip(s),\nin milliseconds.",
             "minimum": 0
           },
           "page": {
@@ -534,14 +475,14 @@
           },
           "query_translation": {
             "type": "string",
-            "description": "The query as NCBI rewrote it after MeSH expansion and synonym\nsubstitution. Useful for showing the user \"we actually searched\nfor X\" beneath the search box."
+            "description": "The query as NCBI rewrote it after MeSH expansion and synonym\nsubstitution."
           },
           "results": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Summary"
             },
-            "description": "Page slice of citation summaries (always ≤ `page_size`)."
+            "description": "Page slice of citation summaries — always the rendering shape.\nBuilt either from `esummary` (default) or from `efetch_bulk`\noutput mapped down to Summary fields (bulk mode)."
           }
         }
       },

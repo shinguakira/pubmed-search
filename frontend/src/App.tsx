@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 
 import { Header } from "@/components/Header";
@@ -24,6 +24,8 @@ export default function App() {
   const sort = searchParams.get("sort") ?? "relevance";
   const pageSize = Number(searchParams.get("ps") ?? "20");
   const display = searchParams.get("display") ?? "summary";
+  const bulk = searchParams.get("bulk") === "1";
+  const queryClient = useQueryClient();
 
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [citePmid, setCitePmid] = useState<string | null>(null);
@@ -43,15 +45,26 @@ export default function App() {
 
   const query = useQuery({
     enabled,
-    queryKey: ["search", term, page, pageSize, sort, fragments.join("|")],
-    queryFn: () =>
-      search({
+    queryKey: ["search", term, page, pageSize, sort, fragments.join("|"), bulk],
+    queryFn: async () => {
+      const res = await search({
         term,
         page,
         pageSize,
         sort,
         filters: fragments,
-      }),
+        bulk,
+      });
+      // Bulk mode prewarms the per-PMID article cache so detail clicks
+      // are instant — `useQuery(["article", pmid])` on ArticlePage
+      // becomes a cache hit instead of an NCBI roundtrip.
+      if (res.details) {
+        for (const d of res.details) {
+          queryClient.setQueryData(["article", d.pmid], d);
+        }
+      }
+      return res;
+    },
     placeholderData: keepPreviousData,
   });
 
@@ -93,8 +106,8 @@ export default function App() {
                   onPageSizeChange={(n) => setParam({ ps: n, page: 1 })}
                   display={display}
                   onDisplayChange={(d) => setParam({ display: d })}
-                  exportTerm={term}
-                  exportFilters={fragments}
+                  bulk={bulk}
+                  onBulkChange={(b) => setParam({ bulk: b ? "1" : null })}
                 />
               </div>
 

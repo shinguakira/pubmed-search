@@ -20,6 +20,9 @@ export interface SearchResponse {
   query_translation: string;
   elapsed_ms: number;
   results: Summary[];
+  /// Present iff the request used `bulk=true`. Same length and PMID
+  /// order as `results`. Use to prewarm a per-PMID article cache.
+  details?: ArticleDetail[];
 }
 
 export interface Author {
@@ -60,6 +63,10 @@ export interface SearchParams {
   pageSize?: number;
   sort?: string;
   filters?: string[];
+  /// When true the backend uses esearch(usehistory)+efetch_bulk and
+  /// fills `details` in the response — heavier per call but lets the
+  /// client prewarm article-detail caches.
+  bulk?: boolean;
 }
 
 const BASE = (import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8787") + "/api";
@@ -81,6 +88,7 @@ export function search(params: SearchParams): Promise<SearchResponse> {
   if (params.sort) qp.set("sort", params.sort);
   if (params.filters && params.filters.length > 0)
     qp.set("filters", params.filters.join(","));
+  if (params.bulk) qp.set("bulk", "true");
   return getJson(`${BASE}/search?${qp.toString()}`);
 }
 
@@ -97,27 +105,4 @@ export function getMesh(term: string, limit = 10) {
 
 export function getCite(pmid: string): Promise<CiteResponse> {
   return getJson(`${BASE}/cite/${encodeURIComponent(pmid)}`);
-}
-
-export interface ExportParams {
-  term: string;
-  format: "bibtex" | "csv" | "json";
-  max?: number;
-  sort?: string;
-  filters?: string[];
-}
-
-/**
- * Build the URL for the backend /api/search/export endpoint
- * (Bulk mode). Returned as a string so callers can either fetch+time
- * it or navigate to it directly.
- */
-export function exportUrl(p: ExportParams): string {
-  const qp = new URLSearchParams();
-  qp.set("term", p.term);
-  qp.set("format", p.format);
-  if (p.max) qp.set("max", String(p.max));
-  if (p.sort) qp.set("sort", p.sort);
-  if (p.filters && p.filters.length > 0) qp.set("filters", p.filters.join(","));
-  return `${BASE}/search/export?${qp.toString()}`;
 }
