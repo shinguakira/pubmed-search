@@ -9,6 +9,7 @@ import {
 interface Props {
   total: number;
   query: string;
+  elapsedMs?: number;
   sort: string;
   onSortChange: (s: string) => void;
   pageSize: number;
@@ -20,6 +21,7 @@ interface Props {
 export function ResultsToolbar({
   total,
   query,
+  elapsedMs,
   sort,
   onSortChange,
   pageSize,
@@ -30,11 +32,23 @@ export function ResultsToolbar({
   return (
     <div className="flex flex-col gap-2 border-b border-paper-rule/60 pb-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
-        <p className="font-serif text-2xl font-bold tracking-tight text-paper-ink">
+        <p
+          className="font-serif text-2xl font-bold tracking-tight text-paper-ink"
+          data-testid="result-count"
+        >
           {total.toLocaleString()}{" "}
           <span className="font-serif text-sm font-normal italic text-paper-brown">
             dispatches
           </span>
+          {typeof elapsedMs === "number" && (
+            <span
+              className="ml-2 font-mono text-[11px] font-normal uppercase tracking-[0.14em] text-paper-fade"
+              data-testid="elapsed-time"
+              title={`Backend reply in ${elapsedMs} ms`}
+            >
+              · {(elapsedMs / 1000).toFixed(2)}s
+            </span>
+          )}
         </p>
         {query && (
           <p className="truncate font-mono text-[10px] uppercase tracking-[0.14em] text-paper-fade">

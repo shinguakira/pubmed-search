@@ -5,6 +5,7 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
+use std::time::Instant;
 
 use crate::pubmed::{ArticleDetail, Client, Summary};
 
@@ -35,6 +36,7 @@ pub struct SearchResponse {
     pub page: u32,
     pub page_size: u32,
     pub query_translation: String,
+    pub elapsed_ms: u64,
     pub results: Vec<Summary>,
 }
 
@@ -42,6 +44,7 @@ pub async fn search(
     State(client): State<Client>,
     Query(q): Query<SearchQuery>,
 ) -> Result<Json<SearchResponse>, ApiError> {
+    let started = Instant::now();
     let mut term = q.term.trim().to_string();
     if let Some(f) = q.filters.as_ref() {
         for filt in f.split(',').map(str::trim).filter(|s| !s.is_empty()) {
@@ -58,6 +61,7 @@ pub async fn search(
         page: q.page,
         page_size: q.page_size,
         query_translation: es.querytranslation,
+        elapsed_ms: started.elapsed().as_millis() as u64,
         results: summaries,
     }))
 }

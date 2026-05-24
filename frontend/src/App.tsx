@@ -86,6 +86,7 @@ export default function App() {
                 <ResultsToolbar
                   total={query.data?.count ?? 0}
                   query={query.data?.query_translation ?? term}
+                  elapsedMs={query.data?.elapsed_ms}
                   sort={sort}
                   onSortChange={(s) => setParam({ sort: s })}
                   pageSize={pageSize}

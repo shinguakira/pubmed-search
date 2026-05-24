@@ -18,6 +18,7 @@ export interface SearchResponse {
   page: number;
   page_size: number;
   query_translation: string;
+  elapsed_ms: number;
   results: Summary[];
 }
 
