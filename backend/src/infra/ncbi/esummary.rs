@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use super::client::{Client, EUTILS};
-use super::dto::Summary;
+use super::types::Summary;
 
 impl Client {
     /// Call NCBI `esummary.fcgi`. Hydrates a batch of PMIDs into the

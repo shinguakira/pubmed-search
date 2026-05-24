@@ -1,5 +1,5 @@
 use super::client::{Client, EUTILS};
-use super::dto::ArticleDetail;
+use super::types::ArticleDetail;
 use super::xml::parse_pubmed_xml;
 
 impl Client {

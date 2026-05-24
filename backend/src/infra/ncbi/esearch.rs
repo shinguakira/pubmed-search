@@ -1,5 +1,5 @@
 use super::client::{Client, EUTILS};
-use super::dto::EsearchResult;
+use super::types::EsearchResult;
 
 impl Client {
     /// Call NCBI `esearch.fcgi`. Returns the IDs that match `term`, the
