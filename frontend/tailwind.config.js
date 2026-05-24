@@ -48,6 +48,17 @@ export default {
           dark: "hsl(212 76% 22%)",
           accent: "hsl(199 89% 48%)",
         },
+        paper: {
+          DEFAULT: "#f4ead4",
+          light: "#faf3df",
+          dark: "#e8dcbd",
+          ink: "#2a1d10",
+          sepia: "#5a3a18",
+          brown: "#7a5a30",
+          fade: "#9b8458",
+          rule: "#b89e6b",
+          rust: "#8b3a1c",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

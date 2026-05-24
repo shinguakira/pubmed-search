@@ -11,46 +11,50 @@ interface HeaderProps {
 export function Header({ onOpenSaved }: HeaderProps) {
   const { items } = useSaved();
   return (
-    <header className="border-b bg-gradient-to-r from-pubmed-dark via-pubmed to-pubmed shadow-sm">
-      <div className="container flex h-14 items-center gap-6">
-        <Link to="/" className="flex items-center gap-2 text-white">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-white/15 ring-1 ring-white/20 backdrop-blur">
-            <span className="font-serif text-base font-bold tracking-tight">P</span>
-          </div>
-          <div className="flex flex-col leading-tight">
-            <span className="text-base font-semibold tracking-tight">PubMed</span>
-            <span className="text-[10px] uppercase tracking-wider text-white/70">
-              shadcn rebuild
-            </span>
-          </div>
-        </Link>
-        <nav className="ml-auto flex items-center gap-1 text-sm text-white/90">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-white hover:bg-white/10 hover:text-white"
-            onClick={onOpenSaved}
-          >
-            <BookmarkIcon className="h-4 w-4" />
-            Saved
-            {items.length > 0 && (
-              <Badge
-                variant="secondary"
-                className="ml-1 h-5 bg-white/20 px-1.5 text-white"
-              >
-                {items.length}
-              </Badge>
-            )}
-          </Button>
-          <a
-            className="rounded-md px-3 py-1.5 text-sm hover:bg-white/10"
-            href="https://pubmed.ncbi.nlm.nih.gov/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            NCBI ↗
-          </a>
-        </nav>
+    <header className="border-b-4 border-double border-paper-rust/70 bg-paper-ink text-paper-light">
+      <div className="w-full px-4 py-3">
+        <div className="flex items-center gap-6">
+          <Link to="/" className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center border-2 border-paper-light/80 bg-paper-light text-paper-ink">
+              <span className="font-serif text-xl font-bold leading-none">P</span>
+            </div>
+            <div className="flex flex-col leading-tight">
+              <span className="font-serif text-2xl font-bold tracking-tight">
+                The PubMed Gazette
+              </span>
+              <span className="font-mono text-[9px] uppercase tracking-[0.32em] text-paper-fade">
+                Est. 1996 · A daily journal of biomedical letters
+              </span>
+            </div>
+          </Link>
+          <nav className="ml-auto flex items-center gap-3 font-serif text-sm">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="border border-paper-light/30 bg-transparent font-serif text-paper-light hover:bg-paper-light/10 hover:text-paper-light"
+              onClick={onOpenSaved}
+            >
+              <BookmarkIcon className="h-4 w-4" />
+              Saved
+              {items.length > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="ml-1 h-5 bg-paper-rust px-1.5 font-mono text-[10px] text-paper-light"
+                >
+                  {items.length}
+                </Badge>
+              )}
+            </Button>
+            <a
+              className="font-serif text-sm italic text-paper-fade hover:text-paper-light hover:underline"
+              href="https://pubmed.ncbi.nlm.nih.gov/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              NCBI ↗
+            </a>
+          </nav>
+        </div>
       </div>
     </header>
   );

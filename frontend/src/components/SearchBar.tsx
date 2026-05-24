@@ -19,21 +19,21 @@ export function SearchBar({ value, onSubmit }: SearchBarProps) {
   };
 
   return (
-    <div className="border-b bg-white/60 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-      <div className="container py-4">
-        <form onSubmit={submit} className="flex flex-col gap-2">
-          <div className="flex w-full items-stretch overflow-hidden rounded-lg border border-input shadow-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring">
+    <div className="border-b-2 border-paper-rule/70 bg-paper-light">
+      <div className="w-full px-4 py-3">
+        <form onSubmit={submit} className="flex flex-col gap-1.5">
+          <div className="flex w-full items-stretch overflow-hidden border-2 border-paper-ink bg-paper focus-within:border-paper-rust">
             <Input
               value={term}
               onChange={(e) => setTerm(e.target.value)}
-              placeholder="Search PubMed..."
-              className="h-11 flex-1 rounded-none border-0 px-4 text-base shadow-none focus-visible:ring-0"
+              placeholder="Inquire of the archive…"
+              className="h-11 flex-1 rounded-none border-0 bg-transparent px-4 font-serif text-base text-paper-ink placeholder:font-serif placeholder:italic placeholder:text-paper-fade focus-visible:ring-0"
               autoFocus
             />
             <Button
               type="submit"
               variant="default"
-              className="h-11 rounded-none rounded-r-lg px-5 text-sm font-semibold"
+              className="h-11 rounded-none border-l-2 border-paper-ink bg-paper-ink px-6 font-serif text-sm font-semibold uppercase tracking-[0.2em] text-paper-light hover:bg-paper-rust"
             >
               <Search className="h-4 w-4" />
               Search
@@ -42,14 +42,16 @@ export function SearchBar({ value, onSubmit }: SearchBarProps) {
           <div className="flex items-center justify-between text-xs">
             <button
               type="button"
-              className="text-pubmed underline-offset-2 hover:underline"
+              className="font-serif italic text-paper-rust underline-offset-2 hover:underline"
               onClick={() => setAdvancedOpen(true)}
             >
-              Advanced
+              › Advanced builder
             </button>
-            <p className="text-muted-foreground">
-              Try: <code className="rounded bg-muted px-1.5 py-0.5">crispr cas9</code>{" "}
-              <code className="rounded bg-muted px-1.5 py-0.5">covid 2024[dp]</code>
+            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-paper-brown">
+              Try:{" "}
+              <span className="text-paper-sepia">crispr cas9</span>
+              {" · "}
+              <span className="text-paper-sepia">covid 2024[dp]</span>
             </p>
           </div>
         </form>

@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -154,20 +153,19 @@ export function FiltersSidebar({ value, onChange }: Props) {
     (value.pubDate !== "any" ? 1 : 0);
 
   return (
-    <aside className="space-y-1 text-sm">
-      <div className="flex items-baseline justify-between pb-2">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+    <aside className="space-y-1 font-serif text-sm text-paper-ink">
+      <div className="flex items-baseline justify-between border-b border-double border-paper-rule/70 pb-1.5">
+        <h2 className="font-serif text-[11px] font-bold uppercase tracking-[0.3em] text-paper-brown">
           Filters
         </h2>
         {activeCount > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-xs text-pubmed"
+          <button
+            type="button"
+            className="font-serif text-[11px] text-paper-rust hover:underline"
             onClick={() => onChange(emptyFilters)}
           >
             Reset ({activeCount})
-          </Button>
+          </button>
         )}
       </div>
 
@@ -179,8 +177,8 @@ export function FiltersSidebar({ value, onChange }: Props) {
               type="button"
               onClick={() => onChange({ ...value, pubDate: opt.value })}
               className={cn(
-                "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent",
-                value.pubDate === opt.value && "bg-accent font-medium text-pubmed",
+                "flex w-full items-center justify-between rounded-sm px-2 py-1 text-left text-[13px] hover:bg-paper-dark/50",
+                value.pubDate === opt.value && "bg-paper-dark/70 font-medium text-paper-rust",
               )}
             >
               <span>{opt.label}</span>
@@ -224,13 +222,14 @@ export function FiltersSidebar({ value, onChange }: Props) {
               return (
                 <label
                   key={opt.value}
-                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 hover:bg-accent"
+                  className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-0.5 hover:bg-paper-dark/50"
                 >
                   <Checkbox
                     checked={checked}
                     onCheckedChange={() => toggleArray(s.key, opt.value)}
+                    className="border-paper-brown data-[state=checked]:bg-paper-rust data-[state=checked]:text-paper-light"
                   />
-                  <span className="text-sm">{opt.label}</span>
+                  <span className="text-[13px] text-paper-ink">{opt.label}</span>
                 </label>
               );
             })}
@@ -252,21 +251,21 @@ function FilterSection({
 }) {
   const [open, setOpen] = useState(defaultOpen ?? true);
   return (
-    <div className="border-b border-border/70">
+    <div className="border-b border-paper-rule/50">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-foreground/80 hover:text-foreground"
+        className="flex w-full items-center justify-between py-1.5 text-left font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-paper-brown hover:text-paper-ink"
       >
         {title}
         <ChevronDown
           className={cn(
-            "h-3.5 w-3.5 transition-transform",
+            "h-3 w-3 transition-transform",
             open ? "rotate-180" : "rotate-0",
           )}
         />
       </button>
-      {open && <div className="pb-2">{children}</div>}
+      {open && <div className="pb-1.5">{children}</div>}
     </div>
   );
 }

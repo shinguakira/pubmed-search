@@ -1,10 +1,6 @@
 import { Link } from "react-router-dom";
-import { BookmarkIcon, BookmarkCheck, Quote, ExternalLink } from "lucide-react";
 import type { Summary } from "@/lib/api";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { useSaved } from "@/hooks/useSaved";
-import { cn } from "@/lib/utils";
 
 interface Props {
   index: number;
@@ -28,12 +24,15 @@ export function ResultItem({ index, item, display = "summary", onCite }: Props) 
 
   if (display === "pmid") {
     return (
-      <div className="flex items-baseline gap-3 border-b py-2 font-mono text-xs">
-        <span className="w-8 shrink-0 text-right text-muted-foreground">{index}</span>
-        <Link to={`/article/${item.pmid}`} className="text-pubmed hover:underline">
+      <div className="flex items-baseline gap-3 border-b border-paper-rule/60 py-2 font-mono text-xs text-paper-ink">
+        <span className="w-8 shrink-0 text-right text-paper-fade">{index}</span>
+        <Link
+          to={`/article/${item.pmid}`}
+          className="text-paper-rust hover:underline"
+        >
           {item.pmid}
         </Link>
-        <span className="truncate text-foreground/70">{item.title}</span>
+        <span className="truncate text-paper-sepia">{item.title}</span>
       </div>
     );
   }
@@ -42,82 +41,89 @@ export function ResultItem({ index, item, display = "summary", onCite }: Props) 
   const year = (item.pubdate || "").split(/\s|;/)[0] || item.pubdate;
 
   return (
-    <article
-      className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-xl border bg-card p-4",
-        "shadow-sm transition-all hover:-translate-y-0.5 hover:border-pubmed/40 hover:shadow-md",
-      )}
-    >
-      <header className="mb-2 flex items-start justify-between gap-2">
-        <span className="font-mono text-[10px] text-muted-foreground">
-          #{index}
-        </span>
-        <div className="flex flex-wrap items-center justify-end gap-1">
+    <article className="group relative grid grid-cols-[44px_minmax(0,1fr)] gap-3 border-b border-double border-paper-rule/70 py-3 last:border-b-0">
+      <div className="select-none pt-0.5 text-right font-serif text-2xl font-bold leading-none text-paper-rule">
+        {String(index).padStart(2, "0")}
+      </div>
+
+      <div className="min-w-0">
+        <div className="mb-0.5 flex items-baseline justify-between gap-3">
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-paper-fade">
+            PMID&nbsp;{item.pmid}
+          </span>
           {primaryType && (
-            <Badge variant="soft" className="text-[10px]">
+            <span className="border border-paper-rust/40 bg-paper-light/60 px-1.5 py-0 font-mono text-[10px] uppercase tracking-[0.16em] text-paper-rust">
               {primaryType}
-            </Badge>
+            </span>
           )}
         </div>
-      </header>
 
-      <Link
-        to={`/article/${item.pmid}`}
-        className="line-clamp-3 text-[14px] font-medium leading-snug text-pubmed visited:text-purple-800 hover:underline"
-        title={item.title}
-        dangerouslySetInnerHTML={{ __html: item.title }}
-      />
+        <h3 className="font-serif text-[17px] font-semibold leading-snug tracking-tight text-paper-ink">
+          <Link
+            to={`/article/${item.pmid}`}
+            className="decoration-paper-rust/40 underline-offset-4 visited:text-paper-sepia hover:underline"
+            dangerouslySetInnerHTML={{ __html: item.title }}
+          />
+        </h3>
 
-      <p className="mt-2 line-clamp-1 text-xs text-foreground/75">
-        {item.authors.slice(0, 5).join(", ")}
-        {item.authors.length > 5 && ", et al."}
-      </p>
+        <p className="mt-0.5 font-serif text-[13px] italic text-paper-sepia">
+          By{" "}
+          {item.authors.slice(0, 8).join(", ")}
+          {item.authors.length > 8 && ", et al."}
+        </p>
 
-      <p className="line-clamp-1 text-xs italic text-muted-foreground">
-        {item.source}
-        {year && ` · ${year}`}
-      </p>
+        <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-paper-brown">
+          <span className="not-italic">{item.source}</span>
+          {year && <> &nbsp;·&nbsp; {year}</>}
+          {item.volume && (
+            <>
+              {" "}
+              &nbsp;·&nbsp; Vol.&nbsp;{item.volume}
+              {item.issue && `(${item.issue})`}
+            </>
+          )}
+          {item.pages && <> &nbsp;·&nbsp; pp.&nbsp;{item.pages}</>}
+          {item.doi && (
+            <>
+              {" "}
+              &nbsp;·&nbsp; DOI&nbsp;{item.doi}
+            </>
+          )}
+        </p>
 
-      <div className="mt-auto pt-3">
-        <div className="flex items-center justify-between">
-          <Badge variant="outline" className="font-mono text-[10px]">
-            PMID {item.pmid}
-          </Badge>
-          <div className="flex items-center gap-0.5 opacity-70 transition-opacity group-hover:opacity-100">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => onCite(item.pmid)}
-              title="Cite"
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-0 font-serif text-[12px] text-paper-rust">
+          <button
+            type="button"
+            onClick={() => onCite(item.pmid)}
+            className="hover:underline"
+          >
+            ▸ Cite
+          </button>
+          <button
+            type="button"
+            onClick={() => toggle(item)}
+            className="hover:underline"
+          >
+            ▸ {saved ? "Saved" : "Save"}
+          </button>
+          {item.doi && (
+            <a
+              href={`https://doi.org/${item.doi}`}
+              target="_blank"
+              rel="noreferrer"
+              className="hover:underline"
             >
-              <Quote className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => toggle(item)}
-              title={saved ? "Saved" : "Save"}
-            >
-              {saved ? (
-                <BookmarkCheck className="h-3.5 w-3.5 text-pubmed" />
-              ) : (
-                <BookmarkIcon className="h-3.5 w-3.5" />
-              )}
-            </Button>
-            {item.doi && (
-              <a
-                href={`https://doi.org/${item.doi}`}
-                target="_blank"
-                rel="noreferrer"
-                title="DOI"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-              </a>
-            )}
-          </div>
+              ▸ DOI
+            </a>
+          )}
+          <a
+            href={`https://pubmed.ncbi.nlm.nih.gov/${item.pmid}/`}
+            target="_blank"
+            rel="noreferrer"
+            className="hover:underline"
+          >
+            ▸ PubMed
+          </a>
         </div>
       </div>
     </article>

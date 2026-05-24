@@ -28,23 +28,23 @@ export function ResultsToolbar({
   onDisplayChange,
 }: Props) {
   return (
-    <div className="flex flex-col gap-2 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-2 border-b border-paper-rule/60 pb-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
-        <p className="text-2xl font-semibold tracking-tight text-foreground">
+        <p className="font-serif text-2xl font-bold tracking-tight text-paper-ink">
           {total.toLocaleString()}{" "}
-          <span className="text-base font-normal text-muted-foreground">
-            results
+          <span className="font-serif text-sm font-normal italic text-paper-brown">
+            dispatches
           </span>
         </p>
         {query && (
-          <p className="truncate text-xs text-muted-foreground">
-            for <code className="rounded bg-muted px-1.5 py-0.5">{query}</code>
+          <p className="truncate font-mono text-[10px] uppercase tracking-[0.14em] text-paper-fade">
+            for <span className="text-paper-sepia">{query}</span>
           </p>
         )}
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Display</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-paper-brown">Display</span>
           <Select value={display} onValueChange={onDisplayChange}>
             <SelectTrigger className="h-9 w-[120px]">
               <SelectValue />
@@ -57,7 +57,7 @@ export function ResultsToolbar({
           </Select>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Sort by</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-paper-brown">Sort by</span>
           <Select value={sort} onValueChange={onSortChange}>
             <SelectTrigger className="h-9 w-[160px]">
               <SelectValue />
@@ -72,7 +72,7 @@ export function ResultsToolbar({
           </Select>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">Per page</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-paper-brown">Per page</span>
           <Select
             value={String(pageSize)}
             onValueChange={(v) => onPageSizeChange(Number(v))}
