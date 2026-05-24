@@ -24,7 +24,7 @@ pub async fn mesh_suggest(
     State(state): State<AppState>,
     Query(q): Query<MeshQuery>,
 ) -> Result<Json<MeshResponse>, AppError> {
-    let es = state.ncbi.esearch("mesh", &q.term, 0, q.limit, None).await?;
+    let es = state.ncbi.esearch("mesh", &q.term, 0, q.limit, None, false).await?;
     let url = format!(
         "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=mesh&id={}&retmode=json",
         es.ids.join(",")

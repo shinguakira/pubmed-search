@@ -8,5 +8,6 @@
 
 pub mod cite;
 pub mod error;
+pub mod export;
 pub mod mesh;
 pub mod search;

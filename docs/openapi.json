@@ -229,6 +229,84 @@
           }
         }
       }
+    },
+    "/api/search/export": {
+      "get": {
+        "tags": [
+          "pubmed"
+        ],
+        "operationId": "export",
+        "parameters": [
+          {
+            "name": "term",
+            "in": "query",
+            "description": "Free-text PubMed query (same grammar as `/api/search`).",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filters",
+            "in": "query",
+            "description": "Comma-separated raw PubMed filter expressions (same shape as\n`/api/search`).",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort order. Same options as `/api/search`.",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "max",
+            "in": "query",
+            "description": "Maximum number of records to bundle into the export. NCBI's\nper-call ceiling for `efetch` via History is 10,000; we clamp\nto that. Default: 200.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "description": "Output format. One of: `bibtex`, `csv`, `json`.",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ExportFormat"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bulk export of the search result set. Response body type depends on the requested `format`: BibTeX text, CSV text, or a JSON array of ArticleDetail. The Content-Type header reflects this."
+          },
+          "500": {
+            "description": "Upstream NCBI error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

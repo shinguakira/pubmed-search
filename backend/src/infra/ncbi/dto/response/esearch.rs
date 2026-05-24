@@ -18,4 +18,12 @@ pub struct EsearchResult {
     /// disjunctions, …). Useful for debugging "why does this search
     /// return *that*?".
     pub querytranslation: String,
+
+    /// History server environment id. Set only when the request used
+    /// `usehistory=y`. Pair with `query_key` for follow-up bulk efetch.
+    pub web_env: Option<String>,
+
+    /// History server query key. Set only when the request used
+    /// `usehistory=y`. Pair with `web_env` for follow-up bulk efetch.
+    pub query_key: Option<u32>,
 }

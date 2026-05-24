@@ -15,6 +15,7 @@
 //! * `tests/api.rs`         — spawns the real server on an ephemeral port
 //!   and hits live NCBI without mocks.
 
+pub mod domain;
 pub mod error;
 pub mod http;
 pub mod infra;

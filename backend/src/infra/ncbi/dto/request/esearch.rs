@@ -24,6 +24,12 @@ pub(crate) struct EsearchRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sort: Option<String>,
 
+    /// `"y"` to make NCBI stash the matching IDs on the History server
+    /// and return `WebEnv` + `QueryKey` we can reuse for bulk efetch.
+    /// Omitted from URL when `None`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub usehistory: Option<&'static str>,
+
     /// `tool` + `email` + optional `api_key`, flattened into the URL.
     #[serde(flatten)]
     pub ident: EutilsIdent,

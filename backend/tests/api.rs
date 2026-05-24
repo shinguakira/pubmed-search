@@ -174,6 +174,45 @@ async fn article_returns_abstract_for_known_pmid() {
 }
 
 #[tokio::test]
+async fn export_returns_bulk_bibtex_in_one_roundtrip() {
+    let _gate = ncbi_gate().lock().await;
+    require_network!();
+    tokio::time::sleep(Duration::from_millis(400)).await;
+    let base = spawn().await;
+    let client = http_client();
+
+    let started = Instant::now();
+    let res = client
+        .get(format!(
+            "{base}/api/search/export?term=crispr+cas9&format=bibtex&max=50"
+        ))
+        .send()
+        .await
+        .expect("request");
+    let ms = started.elapsed().as_millis();
+    assert_eq!(res.status(), 200, "non-200 from /api/search/export");
+
+    let ct = res
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("")
+        .to_string();
+    let body = res.text().await.expect("text body");
+    let entries = body.matches("@article{pmid").count();
+    eprintln!(
+        "[export bibtex] wall_ms={ms} entries={entries} content_type={ct}"
+    );
+
+    assert!(ct.starts_with("application/x-bibtex"));
+    // We asked for 50; allow some slop in case NCBI returns fewer (rare).
+    assert!(
+        entries >= 40,
+        "expected ~50 BibTeX entries, got {entries}"
+    );
+}
+
+#[tokio::test]
 async fn cite_returns_all_formats() {
     let _gate = ncbi_gate().lock().await;
     require_network!();

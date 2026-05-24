@@ -36,7 +36,7 @@ pub async fn search(
 
     let es = state
         .ncbi
-        .esearch("pubmed", &term, retstart, q.page_size, q.sort.as_deref())
+        .esearch("pubmed", &term, retstart, q.page_size, q.sort.as_deref(), false)
         .await?;
     let summaries = state.ncbi.esummary("pubmed", &es.ids).await?;
 
