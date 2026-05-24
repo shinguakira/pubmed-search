@@ -1,5 +1,6 @@
 use super::client::{Client, EUTILS};
-use super::types::EsearchResult;
+use super::dto::request::esearch::EsearchRequest;
+use super::dto::response::EsearchResult;
 
 impl Client {
     /// Call NCBI `esearch.fcgi`. Returns the IDs that match `term`, the
@@ -13,18 +14,18 @@ impl Client {
         retmax: u32,
         sort: Option<&str>,
     ) -> anyhow::Result<EsearchResult> {
-        let mut params = self.base_params();
-        params.push(("db", db.into()));
-        params.push(("term", term.into()));
-        params.push(("retmode", "json".into()));
-        params.push(("retstart", retstart.to_string()));
-        params.push(("retmax", retmax.to_string()));
-        if let Some(s) = sort {
-            params.push(("sort", s.into()));
-        }
+        let req = EsearchRequest {
+            db: db.into(),
+            term: term.into(),
+            retstart,
+            retmax,
+            retmode: "json",
+            sort: sort.map(String::from),
+            ident: self.ident(),
+        };
         let url = format!("{EUTILS}/esearch.fcgi");
         let body: serde_json::Value =
-            self.http.get(url).query(&params).send().await?.json().await?;
+            self.http.get(url).query(&req).send().await?.json().await?;
 
         let result = &body["esearchresult"];
         let count: u32 = result["count"]

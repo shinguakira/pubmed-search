@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
 use super::client::{Client, EUTILS};
-use super::types::Summary;
+use super::dto::request::esummary::EsummaryRequest;
+use super::dto::response::Summary;
 
 impl Client {
     /// Call NCBI `esummary.fcgi`. Hydrates a batch of PMIDs into the
@@ -10,13 +11,15 @@ impl Client {
         if ids.is_empty() {
             return Ok(vec![]);
         }
-        let mut params = self.base_params();
-        params.push(("db", db.into()));
-        params.push(("id", ids.join(",")));
-        params.push(("retmode", "json".into()));
+        let req = EsummaryRequest {
+            db: db.into(),
+            id: ids.join(","),
+            retmode: "json",
+            ident: self.ident(),
+        };
         let url = format!("{EUTILS}/esummary.fcgi");
         let body: serde_json::Value =
-            self.http.get(url).query(&params).send().await?.json().await?;
+            self.http.get(url).query(&req).send().await?.json().await?;
 
         let result = &body["result"];
         let uids: Vec<String> = result["uids"]

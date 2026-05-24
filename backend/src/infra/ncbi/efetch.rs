@@ -1,5 +1,6 @@
 use super::client::{Client, EUTILS};
-use super::types::ArticleDetail;
+use super::dto::request::efetch::EfetchRequest;
+use super::dto::response::ArticleDetail;
 use super::xml::parse_pubmed_xml;
 
 impl Client {
@@ -9,13 +10,15 @@ impl Client {
     /// affiliations, journal, pub date, DOI, keywords, MeSH terms,
     /// publication types.
     pub async fn efetch_abstract(&self, pmid: &str) -> anyhow::Result<ArticleDetail> {
-        let mut params = self.base_params();
-        params.push(("db", "pubmed".into()));
-        params.push(("id", pmid.into()));
-        params.push(("retmode", "xml".into()));
-        params.push(("rettype", "abstract".into()));
+        let req = EfetchRequest {
+            db: "pubmed".into(),
+            id: pmid.into(),
+            retmode: "xml",
+            rettype: "abstract",
+            ident: self.ident(),
+        };
         let url = format!("{EUTILS}/efetch.fcgi");
-        let xml = self.http.get(url).query(&params).send().await?.text().await?;
+        let xml = self.http.get(url).query(&req).send().await?.text().await?;
         parse_pubmed_xml(&xml, pmid)
     }
 }

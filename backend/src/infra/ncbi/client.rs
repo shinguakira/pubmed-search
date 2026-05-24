@@ -1,3 +1,5 @@
+use super::dto::request::common::EutilsIdent;
+
 /// Base URL for all NCBI E-utilities endpoints.
 pub(super) const EUTILS: &str = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils";
 
@@ -25,17 +27,15 @@ impl Client {
         }
     }
 
-    /// Identification params NCBI asks every request to carry (`tool`,
-    /// `email`, optional `api_key`).
-    pub(super) fn base_params(&self) -> Vec<(&'static str, String)> {
-        let mut v = vec![
-            ("tool", self.tool.clone()),
-            ("email", self.email.clone()),
-        ];
-        if let Some(k) = &self.api_key {
-            v.push(("api_key", k.clone()));
+    /// Build the per-request identifier block (`tool`/`email`/`api_key`)
+    /// that NCBI asks every call to carry. Flattened into each request
+    /// DTO via `#[serde(flatten)]`.
+    pub(super) fn ident(&self) -> EutilsIdent {
+        EutilsIdent {
+            tool: self.tool.clone(),
+            email: self.email.clone(),
+            api_key: self.api_key.clone(),
         }
-        v
     }
 }
 

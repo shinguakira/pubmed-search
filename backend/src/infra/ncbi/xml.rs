@@ -7,7 +7,7 @@
 //! When we see character data, we look at the top of the stack to decide
 //! what to do with it (e.g. "we're inside `<ArticleTitle>`, so append").
 
-use super::types::{ArticleDetail, Author};
+use super::dto::response::{ArticleDetail, Author};
 
 pub(super) fn parse_pubmed_xml(xml: &str, pmid: &str) -> anyhow::Result<ArticleDetail> {
     use quick_xml::events::Event;
