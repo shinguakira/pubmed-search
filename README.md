@@ -42,8 +42,10 @@ pubmed-search/
 │   ├── Cargo.toml
 │   └── src/
 │       ├── main.rs
-│       ├── pubmed.rs   NCBI E-utilities client + PubMed XML parser
-│       └── routes.rs   /api/search, /api/article/:pmid, /api/mesh, /api/cite/:pmid
+│       ├── http/       Handlers + DTOs per resource (search/article/cite/mesh)
+│       ├── infra/ncbi/ NCBI client (esearch/esummary/efetch + XML parser)
+│       ├── state.rs    AppState — shared deps injected via State<AppState>
+│       └── error.rs    AppError + IntoResponse
 └── frontend/           Vite dev server at http://localhost:5173 (CORS, no proxy)
     ├── package.json
     └── src/

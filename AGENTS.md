@@ -97,9 +97,14 @@ Key invariants:
 |------|------|
 | `Cargo.toml`            | Crate manifest; axum 0.7, utoipa 5, utoipa-axum 0.1, utoipa-swagger-ui 8. |
 | `src/main.rs`           | Tiny binary: logger init, bind 127.0.0.1:8787, `axum::serve(app())`. |
-| `src/lib.rs`            | Router builder + `ApiDoc` (OpenAPI). Used by binary, tests, and the spec generator. |
-| `src/routes.rs`         | HTTP handlers + DTOs + `ApiError`. All `#[utoipa::path]` annotations live here. |
-| `src/pubmed.rs`         | `pubmed::Client` — wraps reqwest to call esearch / esummary / efetch; streaming PubMed XML parser. |
+| `src/lib.rs`            | Top-level wiring (`app()`, `openapi()`); re-exports `http::ApiDoc`. |
+| `src/state.rs`          | `AppState` — shared deps (`ncbi` client, future DB pool) injected into handlers. |
+| `src/error.rs`          | `AppError` enum + `ErrorResponse` body + `IntoResponse` (single HTTP mapping). |
+| `src/http/mod.rs`       | `ApiDoc` + `build(state)` → `(Router, OpenApi)` via `OpenApiRouter::routes!()`. |
+| `src/http/{search,article,mesh,cite}.rs` | One handler per file, owns its `*Query`/`*Response` DTOs + `#[utoipa::path]`. |
+| `src/infra/ncbi/`       | NCBI client split per endpoint (`client.rs`, `esearch.rs`, `esummary.rs`, `efetch.rs`, `xml.rs`, `types.rs`). |
+| `src/infra/db/`         | (Empty placeholder.) Future: sqlx pool + repository modules. |
+| `src/domain/`           | (Empty placeholder.) Future: pure logic (citation generation, search-query construction) extracted from `http/` for unit testing without IO. |
 | `src/bin/gen-openapi.rs`| `cargo run --bin gen-openapi` → writes `docs/openapi.json`. |
 | `tests/api.rs`          | 4 live-NCBI integration tests; serialized with `OnceLock<Mutex>` + 400 ms throttle. |
 | `tests/openapi.rs`      | 3 offline spec-shape tests: every expected path exists, `SearchResponse.elapsed_ms` present, every op has a 500. |
@@ -138,8 +143,10 @@ Key invariants:
 - **Response/request DTOs derive `ToSchema`** so they show up under
   `#/components/schemas/...`. If a DTO isn't in the schema, double-check
   the derive.
-- **Errors funnel through `ApiError`** (`routes.rs`). Anything `Into<
-  anyhow::Error>` is caught by `?`. Surface a 500 with `ErrorBody`.
+- **Errors funnel through `AppError`** (`error.rs`). Anything `Into<
+  anyhow::Error>` is caught by `?`. Surface a 500 with `ErrorResponse`.
+  `NotFound` and `BadRequest(String)` variants are reserved for the DB
+  layer and richer validation respectively.
 - **NCBI traffic lives only in `pubmed::Client`**. Don't call NCBI from
   handlers directly — add a method on `Client` and call that.
 - **No mocks in tests.** New integration tests go in `backend/tests/`,
@@ -172,16 +179,19 @@ Key invariants:
 
 ### Add a new endpoint
 
-1. Add a typed query/path struct in `routes.rs` (`IntoParams` + `Deserialize`).
-2. Add a response struct (`Serialize` + `ToSchema`).
-3. Write the handler `async fn`, annotate with `#[utoipa::path(...)]`.
-4. Register it in `lib.rs::build_router` via `.routes(routes!(new_handler))`.
-   *Build fails here if the macro can't find the path attribute — good.*
-5. Update `backend/tests/openapi.rs` if you want to assert the path exists.
-6. Add a live integration test in `backend/tests/api.rs` (mind the gate).
-7. `npm run openapi` to regenerate `docs/openapi.json`. Commit it.
-8. Add a typed client method in `frontend/src/lib/api.ts`.
-9. Wire UI as needed. Use react-query for caching.
+1. Create a new file under `backend/src/http/` for the resource
+   (`http/<name>.rs`).
+2. In that file: define `*Query`/`*Path` params (`IntoParams + Deserialize`),
+   `*Response` body (`Serialize + ToSchema`), and the handler `async fn`
+   with `#[utoipa::path(...)]`.
+3. Add `pub mod <name>;` to `backend/src/http/mod.rs`, and register it
+   via `.routes(routes!(<name>::<handler>))`. *Build fails here if the
+   macro can't find the path attribute — good.*
+4. Update `backend/tests/openapi.rs` if you want to assert the path exists.
+5. Add a live integration test in `backend/tests/api.rs` (mind the gate).
+6. `npm run openapi` to regenerate `docs/openapi.json`. Commit it.
+7. Add a typed client method in `frontend/src/lib/api.ts`.
+8. Wire UI as needed. Use react-query for caching.
 
 ### Add a new filter / search facet
 

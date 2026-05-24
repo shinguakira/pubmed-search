@@ -42,7 +42,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorBody"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -83,7 +83,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorBody"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -133,7 +133,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorBody"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -219,7 +219,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorBody"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -335,14 +335,21 @@
           }
         }
       },
-      "ErrorBody": {
+      "ErrorResponse": {
         "type": "object",
+        "description": "Wire-format error body returned to clients. Listed in the OpenAPI\nschema as `ErrorResponse`.",
         "required": [
-          "error"
+          "code",
+          "message"
         ],
         "properties": {
-          "error": {
-            "type": "string"
+          "code": {
+            "type": "string",
+            "description": "Short machine-readable error code (e.g. `not_found`, `internal`)."
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable explanation. Safe to surface to the user."
           }
         }
       },
