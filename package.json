@@ -1,0 +1,25 @@
+{
+  "name": "pubmed-search",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,green \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "dev:frontend": "npm --workspace frontend run dev",
+    "dev:backend": "cargo run --manifest-path backend/Cargo.toml",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:frontend": "npm --workspace frontend run build",
+    "build:backend": "cargo build --release --manifest-path backend/Cargo.toml",
+    "start": "concurrently -n backend,frontend -c blue,green \"npm:start:backend\" \"npm:start:frontend\"",
+    "start:backend": "cargo run --release --manifest-path backend/Cargo.toml",
+    "start:frontend": "npm --workspace frontend run preview",
+    "check": "npm run check:backend && npm run check:frontend",
+    "check:backend": "cargo check --manifest-path backend/Cargo.toml",
+    "check:frontend": "npm --workspace frontend run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}

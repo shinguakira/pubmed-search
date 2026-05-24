@@ -1,0 +1,236 @@
+use axum::{
+    extract::{Path, Query, State},
+    http::StatusCode,
+    response::IntoResponse,
+    Json,
+};
+use serde::{Deserialize, Serialize};
+
+use crate::pubmed::{ArticleDetail, Client, Summary};
+
+#[derive(Debug, Deserialize)]
+pub struct SearchQuery {
+    pub term: String,
+    #[serde(default = "default_page")]
+    pub page: u32,
+    #[serde(default = "default_page_size")]
+    pub page_size: u32,
+    /// "relevance" | "pub_date" | "first_author" | "journal" | "title"
+    pub sort: Option<String>,
+    /// Comma-separated filter expressions appended to term, e.g.
+    /// "humans[Filter]","english[lang]","2020:2025[dp]","Review[pt]"
+    pub filters: Option<String>,
+}
+
+fn default_page() -> u32 {
+    1
+}
+fn default_page_size() -> u32 {
+    20
+}
+
+#[derive(Debug, Serialize)]
+pub struct SearchResponse {
+    pub count: u32,
+    pub page: u32,
+    pub page_size: u32,
+    pub query_translation: String,
+    pub results: Vec<Summary>,
+}
+
+pub async fn search(
+    State(client): State<Client>,
+    Query(q): Query<SearchQuery>,
+) -> Result<Json<SearchResponse>, ApiError> {
+    let mut term = q.term.trim().to_string();
+    if let Some(f) = q.filters.as_ref() {
+        for filt in f.split(',').map(str::trim).filter(|s| !s.is_empty()) {
+            term = format!("({term}) AND {filt}");
+        }
+    }
+    let retstart = q.page.saturating_sub(1) * q.page_size;
+    let es = client
+        .esearch("pubmed", &term, retstart, q.page_size, q.sort.as_deref())
+        .await?;
+    let summaries = client.esummary("pubmed", &es.ids).await?;
+    Ok(Json(SearchResponse {
+        count: es.count,
+        page: q.page,
+        page_size: q.page_size,
+        query_translation: es.querytranslation,
+        results: summaries,
+    }))
+}
+
+pub async fn article(
+    State(client): State<Client>,
+    Path(pmid): Path<String>,
+) -> Result<Json<ArticleDetail>, ApiError> {
+    let detail = client.efetch_abstract(&pmid).await?;
+    Ok(Json(detail))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct MeshQuery {
+    pub term: String,
+    #[serde(default = "default_mesh_limit")]
+    pub limit: u32,
+}
+fn default_mesh_limit() -> u32 {
+    10
+}
+
+#[derive(Debug, Serialize)]
+pub struct MeshResponse {
+    pub count: u32,
+    pub terms: Vec<MeshTerm>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct MeshTerm {
+    pub id: String,
+    pub name: String,
+}
+
+pub async fn mesh_suggest(
+    State(client): State<Client>,
+    Query(q): Query<MeshQuery>,
+) -> Result<Json<MeshResponse>, ApiError> {
+    let es = client.esearch("mesh", &q.term, 0, q.limit, None).await?;
+    // mesh esummary returns "ds_meshterms" etc.; reuse generic
+    let url = format!(
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=mesh&id={}&retmode=json",
+        es.ids.join(",")
+    );
+    let terms = if es.ids.is_empty() {
+        vec![]
+    } else {
+        let body: serde_json::Value = reqwest::get(&url).await?.json().await?;
+        let result = &body["result"];
+        es.ids
+            .iter()
+            .map(|id| {
+                let name = result[id]["ds_meshterms"]
+                    .as_array()
+                    .and_then(|a| a.first().and_then(|v| v.as_str()))
+                    .or_else(|| result[id]["ds_meshui"].as_str())
+                    .unwrap_or("")
+                    .to_string();
+                MeshTerm { id: id.clone(), name }
+            })
+            .collect()
+    };
+    Ok(Json(MeshResponse { count: es.count, terms }))
+}
+
+#[derive(Debug, Serialize)]
+pub struct CiteResponse {
+    pub ama: String,
+    pub apa: String,
+    pub mla: String,
+    pub nlm: String,
+    pub bibtex: String,
+}
+
+pub async fn cite(
+    State(client): State<Client>,
+    Path(pmid): Path<String>,
+) -> Result<Json<CiteResponse>, ApiError> {
+    let d = client.efetch_abstract(&pmid).await?;
+    let authors_short = d
+        .authors
+        .iter()
+        .map(|a| {
+            let initials: String = a
+                .fore_name
+                .split_whitespace()
+                .filter_map(|w| w.chars().next())
+                .collect();
+            format!("{} {}", a.last_name, initials)
+        })
+        .collect::<Vec<_>>();
+    let authors_apa = d
+        .authors
+        .iter()
+        .map(|a| {
+            let initials: String = a
+                .fore_name
+                .split_whitespace()
+                .filter_map(|w| w.chars().next().map(|c| format!("{}.", c)))
+                .collect();
+            format!("{}, {}", a.last_name, initials)
+        })
+        .collect::<Vec<_>>()
+        .join(", ");
+    let first_author = d.authors.first().map(|a| {
+        format!("{}, {}", a.last_name, a.fore_name)
+    }).unwrap_or_default();
+
+    let year = d
+        .pubdate
+        .split_whitespace()
+        .next()
+        .unwrap_or("")
+        .to_string();
+
+    let ama = format!(
+        "{}. {} {}. {};{}. PMID: {}{}",
+        authors_short.join(", "),
+        d.title,
+        d.journal,
+        year,
+        "",
+        d.pmid,
+        if d.doi.is_empty() { String::new() } else { format!(" doi:{}", d.doi) }
+    );
+    let apa = format!(
+        "{} ({}). {}. {}.{}",
+        authors_apa,
+        year,
+        d.title,
+        d.journal,
+        if d.doi.is_empty() { String::new() } else { format!(" https://doi.org/{}", d.doi) }
+    );
+    let mla = format!(
+        "{} \"{}\" {}, {}.{}",
+        first_author,
+        d.title,
+        d.journal,
+        year,
+        if d.doi.is_empty() { String::new() } else { format!(" doi:{}.", d.doi) }
+    );
+    let nlm = ama.clone();
+    let bibtex = format!(
+        "@article{{pmid{pmid},\n  title   = {{ {title} }},\n  author  = {{ {authors} }},\n  journal = {{ {journal} }},\n  year    = {{ {year} }},\n  doi     = {{ {doi} }},\n  pmid    = {{ {pmid} }}\n}}",
+        pmid = d.pmid,
+        title = d.title,
+        authors = d
+            .authors
+            .iter()
+            .map(|a| format!("{}, {}", a.last_name, a.fore_name))
+            .collect::<Vec<_>>()
+            .join(" and "),
+        journal = d.journal,
+        year = year,
+        doi = d.doi,
+    );
+
+    Ok(Json(CiteResponse { ama, apa, mla, nlm, bibtex }))
+}
+
+pub struct ApiError(anyhow::Error);
+impl<E: Into<anyhow::Error>> From<E> for ApiError {
+    fn from(e: E) -> Self {
+        ApiError(e.into())
+    }
+}
+impl IntoResponse for ApiError {
+    fn into_response(self) -> axum::response::Response {
+        tracing::error!("api error: {:?}", self.0);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": self.0.to_string() })),
+        )
+            .into_response()
+    }
+}
