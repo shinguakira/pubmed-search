@@ -93,6 +93,8 @@ export default function App() {
                   onPageSizeChange={(n) => setParam({ ps: n, page: 1 })}
                   display={display}
                   onDisplayChange={(d) => setParam({ display: d })}
+                  exportTerm={term}
+                  exportFilters={fragments}
                 />
               </div>
 

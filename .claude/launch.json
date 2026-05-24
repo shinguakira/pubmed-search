@@ -4,7 +4,7 @@
     {
       "name": "backend",
       "runtimeExecutable": "cargo",
-      "runtimeArgs": ["run", "--manifest-path", "backend/Cargo.toml"],
+      "runtimeArgs": ["run", "--manifest-path", "backend/Cargo.toml", "--bin", "pubmed-backend"],
       "port": 8787
     },
     {

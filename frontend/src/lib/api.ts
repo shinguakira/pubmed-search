@@ -98,3 +98,26 @@ export function getMesh(term: string, limit = 10) {
 export function getCite(pmid: string): Promise<CiteResponse> {
   return getJson(`${BASE}/cite/${encodeURIComponent(pmid)}`);
 }
+
+export interface ExportParams {
+  term: string;
+  format: "bibtex" | "csv" | "json";
+  max?: number;
+  sort?: string;
+  filters?: string[];
+}
+
+/**
+ * Build the URL for the backend /api/search/export endpoint
+ * (Bulk mode). Returned as a string so callers can either fetch+time
+ * it or navigate to it directly.
+ */
+export function exportUrl(p: ExportParams): string {
+  const qp = new URLSearchParams();
+  qp.set("term", p.term);
+  qp.set("format", p.format);
+  if (p.max) qp.set("max", String(p.max));
+  if (p.sort) qp.set("sort", p.sort);
+  if (p.filters && p.filters.length > 0) qp.set("filters", p.filters.join(","));
+  return `${BASE}/search/export?${qp.toString()}`;
+}

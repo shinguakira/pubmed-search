@@ -5,6 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ExportButton } from "@/components/ExportButton";
 
 interface Props {
   total: number;
@@ -16,6 +17,10 @@ interface Props {
   onPageSizeChange: (n: number) => void;
   display: string;
   onDisplayChange: (d: string) => void;
+  /// Raw user term + filter fragments + sort, used by the Export popover
+  /// to build /api/search/export URLs or drive the individual fetch path.
+  exportTerm: string;
+  exportFilters?: string[];
 }
 
 export function ResultsToolbar({
@@ -28,6 +33,8 @@ export function ResultsToolbar({
   onPageSizeChange,
   display,
   onDisplayChange,
+  exportTerm,
+  exportFilters,
 }: Props) {
   return (
     <div className="flex flex-col gap-2 border-b border-paper-rule/60 pb-3 sm:flex-row sm:items-center sm:justify-between">
@@ -103,6 +110,11 @@ export function ResultsToolbar({
             </SelectContent>
           </Select>
         </div>
+        <ExportButton
+          term={exportTerm}
+          sort={sort}
+          filters={exportFilters}
+        />
       </div>
     </div>
   );
