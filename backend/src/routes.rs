@@ -6,20 +6,23 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::time::Instant;
+use utoipa::{IntoParams, ToSchema};
 
 use crate::pubmed::{ArticleDetail, Client, Summary};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, IntoParams)]
 pub struct SearchQuery {
+    /// Free-text PubMed query, e.g. `crispr cas9` or `covid 2024[dp]`.
     pub term: String,
+    /// 1-based page number.
     #[serde(default = "default_page")]
     pub page: u32,
     #[serde(default = "default_page_size")]
     pub page_size: u32,
-    /// "relevance" | "pub_date" | "first_author" | "journal" | "title"
+    /// Sort order. One of: `relevance`, `pub_date`, `first_author`, `journal`, `title`.
     pub sort: Option<String>,
-    /// Comma-separated filter expressions appended to term, e.g.
-    /// "humans[Filter]","english[lang]","2020:2025[dp]","Review[pt]"
+    /// Comma-separated PubMed filter expressions appended to the term,
+    /// e.g. `humans[Filter],english[lang],2020:2025[dp],Review[pt]`.
     pub filters: Option<String>,
 }
 
@@ -30,16 +33,34 @@ fn default_page_size() -> u32 {
     20
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct SearchResponse {
     pub count: u32,
     pub page: u32,
     pub page_size: u32,
     pub query_translation: String,
+    /// Server-side wall-clock duration for the upstream NCBI roundtrip,
+    /// in milliseconds.
     pub elapsed_ms: u64,
     pub results: Vec<Summary>,
 }
 
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ErrorBody {
+    pub error: String,
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/search",
+    tag = "pubmed",
+    params(SearchQuery),
+    responses(
+        (status = 200, description = "Paginated PubMed search results",
+            body = SearchResponse),
+        (status = 500, description = "Upstream NCBI error", body = ErrorBody),
+    ),
+)]
 pub async fn search(
     State(client): State<Client>,
     Query(q): Query<SearchQuery>,
@@ -66,6 +87,17 @@ pub async fn search(
     }))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/article/{pmid}",
+    tag = "pubmed",
+    params(("pmid" = String, Path, description = "PubMed ID")),
+    responses(
+        (status = 200, description = "Structured article detail (abstract, authors, MeSH, …)",
+            body = ArticleDetail),
+        (status = 500, description = "Upstream NCBI error", body = ErrorBody),
+    ),
+)]
 pub async fn article(
     State(client): State<Client>,
     Path(pmid): Path<String>,
@@ -74,7 +106,7 @@ pub async fn article(
     Ok(Json(detail))
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, IntoParams)]
 pub struct MeshQuery {
     pub term: String,
     #[serde(default = "default_mesh_limit")]
@@ -84,24 +116,34 @@ fn default_mesh_limit() -> u32 {
     10
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct MeshResponse {
     pub count: u32,
     pub terms: Vec<MeshTerm>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct MeshTerm {
     pub id: String,
     pub name: String,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/mesh",
+    tag = "mesh",
+    params(MeshQuery),
+    responses(
+        (status = 200, description = "MeSH term suggestions for a free-text query",
+            body = MeshResponse),
+        (status = 500, description = "Upstream NCBI error", body = ErrorBody),
+    ),
+)]
 pub async fn mesh_suggest(
     State(client): State<Client>,
     Query(q): Query<MeshQuery>,
 ) -> Result<Json<MeshResponse>, ApiError> {
     let es = client.esearch("mesh", &q.term, 0, q.limit, None).await?;
-    // mesh esummary returns "ds_meshterms" etc.; reuse generic
     let url = format!(
         "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=mesh&id={}&retmode=json",
         es.ids.join(",")
@@ -127,7 +169,7 @@ pub async fn mesh_suggest(
     Ok(Json(MeshResponse { count: es.count, terms }))
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct CiteResponse {
     pub ama: String,
     pub apa: String,
@@ -136,6 +178,17 @@ pub struct CiteResponse {
     pub bibtex: String,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/cite/{pmid}",
+    tag = "pubmed",
+    params(("pmid" = String, Path, description = "PubMed ID")),
+    responses(
+        (status = 200, description = "Citation strings in 5 common formats",
+            body = CiteResponse),
+        (status = 500, description = "Upstream NCBI error", body = ErrorBody),
+    ),
+)]
 pub async fn cite(
     State(client): State<Client>,
     Path(pmid): Path<String>,
@@ -233,7 +286,7 @@ impl IntoResponse for ApiError {
         tracing::error!("api error: {:?}", self.0);
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            Json(serde_json::json!({ "error": self.0.to_string() })),
+            Json(ErrorBody { error: self.0.to_string() }),
         )
             .into_response()
     }

@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use utoipa::ToSchema;
 
 const EUTILS: &str = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils";
 
@@ -146,7 +147,7 @@ pub struct EsearchResult {
     pub querytranslation: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct Summary {
     pub pmid: String,
     pub title: String,
@@ -162,7 +163,7 @@ pub struct Summary {
     pub lang: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct ArticleDetail {
     pub pmid: String,
     pub title: String,
@@ -176,7 +177,7 @@ pub struct ArticleDetail {
     pub pubtypes: Vec<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct Author {
     pub last_name: String,
     pub fore_name: String,

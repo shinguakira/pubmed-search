@@ -1,0 +1,500 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "The PubMed Gazette API",
+    "description": "Thin Rust proxy around NCBI E-utilities for the PubMed Gazette frontend.",
+    "license": {
+      "name": ""
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/article/{pmid}": {
+      "get": {
+        "tags": [
+          "pubmed"
+        ],
+        "operationId": "article",
+        "parameters": [
+          {
+            "name": "pmid",
+            "in": "path",
+            "description": "PubMed ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Structured article detail (abstract, authors, MeSH, …)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArticleDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Upstream NCBI error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cite/{pmid}": {
+      "get": {
+        "tags": [
+          "pubmed"
+        ],
+        "operationId": "cite",
+        "parameters": [
+          {
+            "name": "pmid",
+            "in": "path",
+            "description": "PubMed ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Citation strings in 5 common formats",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CiteResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Upstream NCBI error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mesh": {
+      "get": {
+        "tags": [
+          "mesh"
+        ],
+        "operationId": "mesh_suggest",
+        "parameters": [
+          {
+            "name": "term",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MeSH term suggestions for a free-text query",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeshResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Upstream NCBI error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/search": {
+      "get": {
+        "tags": [
+          "pubmed"
+        ],
+        "operationId": "search",
+        "parameters": [
+          {
+            "name": "term",
+            "in": "query",
+            "description": "Free-text PubMed query, e.g. `crispr cas9` or `covid 2024[dp]`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "1-based page number.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort order. One of: `relevance`, `pub_date`, `first_author`, `journal`, `title`.",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "name": "filters",
+            "in": "query",
+            "description": "Comma-separated PubMed filter expressions appended to the term,\ne.g. `humans[Filter],english[lang],2020:2025[dp],Review[pt]`.",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated PubMed search results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Upstream NCBI error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ArticleDetail": {
+        "type": "object",
+        "required": [
+          "pmid",
+          "title",
+          "abstract_text",
+          "authors",
+          "journal",
+          "pubdate",
+          "doi",
+          "keywords",
+          "mesh_terms",
+          "pubtypes"
+        ],
+        "properties": {
+          "abstract_text": {
+            "type": "string"
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Author"
+            }
+          },
+          "doi": {
+            "type": "string"
+          },
+          "journal": {
+            "type": "string"
+          },
+          "keywords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "mesh_terms": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "pmid": {
+            "type": "string"
+          },
+          "pubdate": {
+            "type": "string"
+          },
+          "pubtypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      "Author": {
+        "type": "object",
+        "required": [
+          "last_name",
+          "fore_name",
+          "affiliation"
+        ],
+        "properties": {
+          "affiliation": {
+            "type": "string"
+          },
+          "fore_name": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          }
+        }
+      },
+      "CiteResponse": {
+        "type": "object",
+        "required": [
+          "ama",
+          "apa",
+          "mla",
+          "nlm",
+          "bibtex"
+        ],
+        "properties": {
+          "ama": {
+            "type": "string"
+          },
+          "apa": {
+            "type": "string"
+          },
+          "bibtex": {
+            "type": "string"
+          },
+          "mla": {
+            "type": "string"
+          },
+          "nlm": {
+            "type": "string"
+          }
+        }
+      },
+      "ErrorBody": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "MeshResponse": {
+        "type": "object",
+        "required": [
+          "count",
+          "terms"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "terms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeshTerm"
+            }
+          }
+        }
+      },
+      "MeshTerm": {
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "SearchResponse": {
+        "type": "object",
+        "required": [
+          "count",
+          "page",
+          "page_size",
+          "query_translation",
+          "elapsed_ms",
+          "results"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "elapsed_ms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Server-side wall-clock duration for the upstream NCBI roundtrip,\nin milliseconds.",
+            "minimum": 0
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "page_size": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "query_translation": {
+            "type": "string"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Summary"
+            }
+          }
+        }
+      },
+      "Summary": {
+        "type": "object",
+        "required": [
+          "pmid",
+          "title",
+          "authors",
+          "source",
+          "pubdate",
+          "epubdate",
+          "volume",
+          "issue",
+          "pages",
+          "doi",
+          "pubtypes",
+          "lang"
+        ],
+        "properties": {
+          "authors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "doi": {
+            "type": "string"
+          },
+          "epubdate": {
+            "type": "string"
+          },
+          "issue": {
+            "type": "string"
+          },
+          "lang": {
+            "type": "string"
+          },
+          "pages": {
+            "type": "string"
+          },
+          "pmid": {
+            "type": "string"
+          },
+          "pubdate": {
+            "type": "string"
+          },
+          "pubtypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "source": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "volume": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "pubmed",
+      "description": "Search, fetch, and cite PubMed articles"
+    },
+    {
+      "name": "mesh",
+      "description": "MeSH term suggestions"
+    }
+  ]
+}
