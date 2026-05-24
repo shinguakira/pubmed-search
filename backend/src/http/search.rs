@@ -2,48 +2,12 @@
 
 use axum::extract::{Query, State};
 use axum::Json;
-use serde::{Deserialize, Serialize};
 use std::time::Instant;
-use utoipa::{IntoParams, ToSchema};
 
-use crate::error::{AppError, ErrorResponse};
-use crate::infra::ncbi::Summary;
+use crate::error::AppError;
+use crate::http::dto::error::ErrorResponse;
+use crate::http::dto::search::{SearchQuery, SearchResponse};
 use crate::state::AppState;
-
-#[derive(Debug, Deserialize, IntoParams)]
-pub struct SearchQuery {
-    /// Free-text PubMed query, e.g. `crispr cas9` or `covid 2024[dp]`.
-    pub term: String,
-    /// 1-based page number.
-    #[serde(default = "default_page")]
-    pub page: u32,
-    #[serde(default = "default_page_size")]
-    pub page_size: u32,
-    /// Sort order. One of: `relevance`, `pub_date`, `first_author`, `journal`, `title`.
-    pub sort: Option<String>,
-    /// Comma-separated PubMed filter expressions appended to the term,
-    /// e.g. `humans[Filter],english[lang],2020:2025[dp],Review[pt]`.
-    pub filters: Option<String>,
-}
-
-fn default_page() -> u32 {
-    1
-}
-fn default_page_size() -> u32 {
-    20
-}
-
-#[derive(Debug, Serialize, ToSchema)]
-pub struct SearchResponse {
-    pub count: u32,
-    pub page: u32,
-    pub page_size: u32,
-    pub query_translation: String,
-    /// Server-side wall-clock duration for the upstream NCBI roundtrip,
-    /// in milliseconds.
-    pub elapsed_ms: u64,
-    pub results: Vec<Summary>,
-}
 
 #[utoipa::path(
     get,

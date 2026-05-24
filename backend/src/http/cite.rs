@@ -3,20 +3,11 @@
 
 use axum::extract::{Path, State};
 use axum::Json;
-use serde::Serialize;
-use utoipa::ToSchema;
 
-use crate::error::{AppError, ErrorResponse};
+use crate::error::AppError;
+use crate::http::dto::cite::CiteResponse;
+use crate::http::dto::error::ErrorResponse;
 use crate::state::AppState;
-
-#[derive(Debug, Serialize, ToSchema)]
-pub struct CiteResponse {
-    pub ama: String,
-    pub apa: String,
-    pub mla: String,
-    pub nlm: String,
-    pub bibtex: String,
-}
 
 #[utoipa::path(
     get,

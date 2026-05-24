@@ -3,7 +3,8 @@
 use axum::extract::{Path, State};
 use axum::Json;
 
-use crate::error::{AppError, ErrorResponse};
+use crate::error::AppError;
+use crate::http::dto::error::ErrorResponse;
 use crate::infra::ncbi::ArticleDetail;
 use crate::state::AppState;
 

@@ -3,33 +3,11 @@
 
 use axum::extract::{Query, State};
 use axum::Json;
-use serde::{Deserialize, Serialize};
-use utoipa::{IntoParams, ToSchema};
 
-use crate::error::{AppError, ErrorResponse};
+use crate::error::AppError;
+use crate::http::dto::error::ErrorResponse;
+use crate::http::dto::mesh::{MeshQuery, MeshResponse, MeshTerm};
 use crate::state::AppState;
-
-#[derive(Debug, Deserialize, IntoParams)]
-pub struct MeshQuery {
-    pub term: String,
-    #[serde(default = "default_mesh_limit")]
-    pub limit: u32,
-}
-fn default_mesh_limit() -> u32 {
-    10
-}
-
-#[derive(Debug, Serialize, ToSchema)]
-pub struct MeshResponse {
-    pub count: u32,
-    pub terms: Vec<MeshTerm>,
-}
-
-#[derive(Debug, Serialize, ToSchema)]
-pub struct MeshTerm {
-    pub id: String,
-    pub name: String,
-}
 
 #[utoipa::path(
     get,

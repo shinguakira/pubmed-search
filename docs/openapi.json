@@ -101,6 +101,7 @@
           {
             "name": "term",
             "in": "query",
+            "description": "Free-text fragment to look up in the MeSH thesaurus.",
             "required": true,
             "schema": {
               "type": "string"
@@ -109,6 +110,7 @@
           {
             "name": "limit",
             "in": "query",
+            "description": "Max suggestions to return (default 10).",
             "required": false,
             "schema": {
               "type": "integer",
@@ -151,7 +153,7 @@
           {
             "name": "term",
             "in": "query",
-            "description": "Free-text PubMed query, e.g. `crispr cas9` or `covid 2024[dp]`.",
+            "description": "Free-text PubMed query. Field tags (`[ti]`, `[au]`, `[mesh]`,\n`[dp]`, …) and boolean operators (`AND`, `OR`, `NOT`) work as on\nPubMed itself. Example: `crispr cas9` or `covid 2024[dp]`.",
             "required": true,
             "schema": {
               "type": "string"
@@ -160,7 +162,7 @@
           {
             "name": "page",
             "in": "query",
-            "description": "1-based page number.",
+            "description": "1-based page number. NCBI internally uses 0-based offsets; the\nhandler converts.",
             "required": false,
             "schema": {
               "type": "integer",
@@ -171,6 +173,7 @@
           {
             "name": "page_size",
             "in": "query",
+            "description": "Number of results per page. NCBI's hard ceiling is 10000 but\npractical UIs stay ≤ 100.",
             "required": false,
             "schema": {
               "type": "integer",
@@ -181,7 +184,7 @@
           {
             "name": "sort",
             "in": "query",
-            "description": "Sort order. One of: `relevance`, `pub_date`, `first_author`, `journal`, `title`.",
+            "description": "Sort order. One of: `relevance`, `pub_date`, `first_author`,\n`journal`, `title`. Omitted = NCBI default (relevance).",
             "required": false,
             "schema": {
               "type": [
@@ -193,7 +196,7 @@
           {
             "name": "filters",
             "in": "query",
-            "description": "Comma-separated PubMed filter expressions appended to the term,\ne.g. `humans[Filter],english[lang],2020:2025[dp],Review[pt]`.",
+            "description": "Comma-separated raw PubMed filter expressions appended to `term`\nas `(term) AND filter1 AND filter2 …`. Each fragment uses the\nsame `[tag]` syntax PubMed expects, e.g.\n`humans[Filter],english[lang],2020:2025[dp],Review[pt]`.",
             "required": false,
             "schema": {
               "type": [
@@ -232,6 +235,7 @@
     "schemas": {
       "ArticleDetail": {
         "type": "object",
+        "description": "Full article record parsed out of NCBI `efetch` XML.\n\nReturned by `GET /api/article/{pmid}`. Compared to `Summary`,\nthis carries the abstract text, author affiliations, MeSH terms,\nand author-supplied keywords.",
         "required": [
           "pmid",
           "title",
@@ -246,51 +250,62 @@
         ],
         "properties": {
           "abstract_text": {
-            "type": "string"
+            "type": "string",
+            "description": "Full abstract. Multi-section abstracts (`BACKGROUND`, `METHODS`,\n`RESULTS`, `CONCLUSIONS`, …) are joined with a blank line, each\nsection prefixed with its label. Empty string if no abstract is\nindexed for this PMID."
           },
           "authors": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Author"
-            }
+            },
+            "description": "Authors with full names + affiliation strings, in published order."
           },
           "doi": {
-            "type": "string"
+            "type": "string",
+            "description": "DOI without the `https://doi.org/` prefix. Empty if missing."
           },
           "journal": {
-            "type": "string"
+            "type": "string",
+            "description": "Full journal title (e.g. `Cell communication and signaling : CCS`)."
           },
           "keywords": {
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "description": "Author-supplied keywords (NCBI calls these \"Keyword List\";\ndistinct from MeSH terms)."
           },
           "mesh_terms": {
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "description": "NLM-assigned MeSH descriptors (controlled vocabulary). Empty if\nthe record hasn't been indexed yet (recent articles often haven't)."
           },
           "pmid": {
-            "type": "string"
+            "type": "string",
+            "description": "PubMed unique identifier, echoed back from the request."
           },
           "pubdate": {
-            "type": "string"
+            "type": "string",
+            "description": "Publication date as `YYYY [Month [Day]]`, e.g. `2026 May 23`.\nComponents are omitted if NCBI didn't index them."
           },
           "pubtypes": {
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "description": "Publication-type labels (`Journal Article`, `Review`, …). Same\nshape as `Summary.pubtypes`."
           },
           "title": {
-            "type": "string"
+            "type": "string",
+            "description": "Article title. May contain inline HTML tags from the source record."
           }
         }
       },
       "Author": {
         "type": "object",
+        "description": "One author record from `efetch` XML.\n\nAll fields default to empty string when NCBI omits them — typically\nwhen an author has only a collective name, or when affiliation isn't\nindexed.",
         "required": [
           "last_name",
           "fore_name",
@@ -298,18 +313,22 @@
         ],
         "properties": {
           "affiliation": {
-            "type": "string"
+            "type": "string",
+            "description": "Free-text affiliation string. May contain a full address, ORCID,\nor email — we preserve NCBI's content verbatim."
           },
           "fore_name": {
-            "type": "string"
+            "type": "string",
+            "description": "Given names + middle initials, space-separated (e.g. `John A`)."
           },
           "last_name": {
-            "type": "string"
+            "type": "string",
+            "description": "Family name as it appears in the article."
           }
         }
       },
       "CiteResponse": {
         "type": "object",
+        "description": "Response body for `GET /api/cite/{pmid}` — the same citation\nrendered five different ways.\n\nAll formats are generated server-side from one `efetch` call and are\nplain text (no HTML). Wrap in `<pre>` on the client if you want to\npreserve line breaks (BibTeX is multi-line).",
         "required": [
           "ama",
           "apa",
@@ -319,25 +338,30 @@
         ],
         "properties": {
           "ama": {
-            "type": "string"
+            "type": "string",
+            "description": "AMA 11th-edition style. One-line."
           },
           "apa": {
-            "type": "string"
+            "type": "string",
+            "description": "APA 7th-edition style. One-line."
           },
           "bibtex": {
-            "type": "string"
+            "type": "string",
+            "description": "BibTeX entry, ready to paste into a `.bib` file. Multi-line.\nThe cite key is `pmid{PMID}`."
           },
           "mla": {
-            "type": "string"
+            "type": "string",
+            "description": "MLA 9th-edition style. One-line."
           },
           "nlm": {
-            "type": "string"
+            "type": "string",
+            "description": "NLM journal-citation style (similar to AMA; used by PubMed\nitself)."
           }
         }
       },
       "ErrorResponse": {
         "type": "object",
-        "description": "Wire-format error body returned to clients. Listed in the OpenAPI\nschema as `ErrorResponse`.",
+        "description": "Wire-format error body returned for any non-2xx response.\n\nThe shape is intentionally tiny so it's easy to consume in JS:\n`(await res.json()).message`. Pair it with the HTTP status code\nfor full context.",
         "required": [
           "code",
           "message"
@@ -345,16 +369,17 @@
         "properties": {
           "code": {
             "type": "string",
-            "description": "Short machine-readable error code (e.g. `not_found`, `internal`)."
+            "description": "Short machine-readable code suitable for switch-on logic.\nStable strings: `not_found`, `bad_request`, `internal`."
           },
           "message": {
             "type": "string",
-            "description": "Human-readable explanation. Safe to surface to the user."
+            "description": "Human-readable explanation. Safe to surface directly to the\nend user — never includes stack traces or secrets."
           }
         }
       },
       "MeshResponse": {
         "type": "object",
+        "description": "Response body for `GET /api/mesh`.",
         "required": [
           "count",
           "terms"
@@ -363,33 +388,39 @@
           "count": {
             "type": "integer",
             "format": "int32",
+            "description": "Total matching MeSH terms in NCBI's mesh db (not capped to `limit`).",
             "minimum": 0
           },
           "terms": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/MeshTerm"
-            }
+            },
+            "description": "Returned suggestions (length ≤ `limit`)."
           }
         }
       },
       "MeshTerm": {
         "type": "object",
+        "description": "A single MeSH descriptor.",
         "required": [
           "id",
           "name"
         ],
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": "NCBI's MeSH unique identifier (UID). Stable across reindexes."
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "description": "Human-readable preferred term (e.g. `Aspirin`)."
           }
         }
       },
       "SearchResponse": {
         "type": "object",
+        "description": "Response body for `GET /api/search`.",
         "required": [
           "count",
           "page",
@@ -402,37 +433,43 @@
           "count": {
             "type": "integer",
             "format": "int32",
+            "description": "Total matching records in PubMed for this query (the whole corpus,\nnot just the current page).",
             "minimum": 0
           },
           "elapsed_ms": {
             "type": "integer",
             "format": "int64",
-            "description": "Server-side wall-clock duration for the upstream NCBI roundtrip,\nin milliseconds.",
+            "description": "Server-side wall-clock duration for the upstream NCBI roundtrip\n(esearch + esummary), in milliseconds. Network latency from the\nbrowser to this server is *not* included.",
             "minimum": 0
           },
           "page": {
             "type": "integer",
             "format": "int32",
+            "description": "Echo of the requested page number (1-based).",
             "minimum": 0
           },
           "page_size": {
             "type": "integer",
             "format": "int32",
+            "description": "Echo of the requested page size.",
             "minimum": 0
           },
           "query_translation": {
-            "type": "string"
+            "type": "string",
+            "description": "The query as NCBI rewrote it after MeSH expansion and synonym\nsubstitution. Useful for showing the user \"we actually searched\nfor X\" beneath the search box."
           },
           "results": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Summary"
-            }
+            },
+            "description": "Page slice of citation summaries (always ≤ `page_size`)."
           }
         }
       },
       "Summary": {
         "type": "object",
+        "description": "One row in the search results — the data NCBI `esummary` returns for\na single PMID, normalized.\n\nMost string fields default to `\"\"` when NCBI omits them rather than\nbeing `Option<String>`, so the frontend can render unconditionally\nwithout null checks.",
         "required": [
           "pmid",
           "title",
@@ -452,43 +489,55 @@
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "description": "Short author names in NCBI's display form\n(`Last F`, e.g. `Liu Y`). Use `efetch_abstract` for full names."
           },
           "doi": {
-            "type": "string"
+            "type": "string",
+            "description": "DOI without the `https://doi.org/` prefix\n(e.g. `10.1038/s41586-024-12345`). Empty if NCBI didn't index one."
           },
           "epubdate": {
-            "type": "string"
+            "type": "string",
+            "description": "Electronic-ahead-of-print date if applicable, otherwise empty.\nSame free-text format as `pubdate`."
           },
           "issue": {
-            "type": "string"
+            "type": "string",
+            "description": "Journal issue number within the volume."
           },
           "lang": {
-            "type": "string"
+            "type": "string",
+            "description": "ISO 639-2 language code (`eng`, `jpn`, …). Empty if missing."
           },
           "pages": {
-            "type": "string"
+            "type": "string",
+            "description": "Page range within the issue (e.g. `5186-93`)."
           },
           "pmid": {
-            "type": "string"
+            "type": "string",
+            "description": "PubMed unique identifier, e.g. `25315507`."
           },
           "pubdate": {
-            "type": "string"
+            "type": "string",
+            "description": "Publication date as NCBI formats it (e.g. `2026 May 23`,\n`2024 Jun`). Free-text — *not* ISO-8601."
           },
           "pubtypes": {
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "description": "Publication-type labels from NCBI\n(e.g. `Journal Article`, `Review`, `Randomized Controlled Trial`)."
           },
           "source": {
-            "type": "string"
+            "type": "string",
+            "description": "Journal abbreviation (e.g. `Nat Med`, `Cell`). NCBI's \"source\"\nfield."
           },
           "title": {
-            "type": "string"
+            "type": "string",
+            "description": "Article title. May contain inline HTML tags (`<i>`, `<sub>`, …)\nthat NCBI preserves from the original record."
           },
           "volume": {
-            "type": "string"
+            "type": "string",
+            "description": "Journal volume number."
           }
         }
       }

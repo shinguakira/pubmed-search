@@ -1,13 +1,5 @@
-use serde::Serialize;
-
 use super::client::{Client, EUTILS};
-
-#[derive(Debug, Serialize)]
-pub struct EsearchResult {
-    pub count: u32,
-    pub ids: Vec<String>,
-    pub querytranslation: String,
-}
+use super::dto::EsearchResult;
 
 impl Client {
     /// Call NCBI `esearch.fcgi`. Returns the IDs that match `term`, the

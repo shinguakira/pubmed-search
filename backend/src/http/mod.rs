@@ -18,6 +18,7 @@ use crate::state::AppState;
 
 pub mod article;
 pub mod cite;
+pub mod dto;
 pub mod mesh;
 pub mod search;
 

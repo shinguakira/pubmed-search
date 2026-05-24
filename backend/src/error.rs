@@ -4,22 +4,15 @@
 //! its own typed error. `AppError` wraps them via `#[from]` so handlers
 //! can use `?` freely. The single `IntoResponse` impl below maps every
 //! variant to an HTTP status + JSON body, keeping per-handler code clean.
+//!
+//! The wire-format body is `http::dto::error::ErrorResponse` — DTOs live
+//! in `http/dto/` so this file stays focused on the error *type*.
 
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
-use serde::Serialize;
-use utoipa::ToSchema;
 
-/// Wire-format error body returned to clients. Listed in the OpenAPI
-/// schema as `ErrorResponse`.
-#[derive(Debug, Serialize, ToSchema)]
-pub struct ErrorResponse {
-    /// Short machine-readable error code (e.g. `not_found`, `internal`).
-    pub code: &'static str,
-    /// Human-readable explanation. Safe to surface to the user.
-    pub message: String,
-}
+use crate::http::dto::error::ErrorResponse;
 
 #[derive(thiserror::Error, Debug)]
 pub enum AppError {
