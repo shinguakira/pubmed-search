@@ -72,3 +72,180 @@
     border-radius: 9999px;
   }
 }
+
+/* ── Newsletter open-animations for the article modal ─────────────
+ *
+ * Two-phase per variant:
+ *   Phase 1 (0–700ms)  — a small mail/paper icon flies from off-screen
+ *                        toward the centre of the viewport.
+ *   Phase 2 (700ms–)   — the actual modal panel materialises and the
+ *                        article contents open in the variant's style.
+ *
+ * Both phases live inside a single fixed overlay tagged
+ * `[data-anim="envelope|unfold|drop"]`. Re-mount restarts everything
+ * via React `key={pmid + variant}`.
+ */
+
+/* Backdrop fade — shared. */
+@keyframes backdrop-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+[data-anim] { animation: backdrop-fade 220ms ease-out both; }
+
+/* === Phase 1: flying mail/paper icon ===
+ *
+ * Layout:
+ *   .mail-stage   — full-viewport overlay, centred via flex
+ *   .mail-courier — the unit that flies in (envelope + optional bird);
+ *                   variant-specific fly-in keyframes are bound here
+ *   .mail-icon    — the envelope/paper/scroll itself; settles & fades
+ *   .mail-bird    — only present in `envelope`; flaps wings during
+ *                   delivery and peels off to the upper-left after */
+.mail-stage {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 60;
+}
+.mail-courier {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.mail-icon {
+  width: 7rem;
+  height: 7rem;
+  color: hsl(20 55% 38%);
+  filter: drop-shadow(0 12px 16px rgb(0 0 0 / 0.45));
+  animation: icon-settle 380ms ease-out 720ms both;
+}
+@keyframes icon-settle {
+  from { transform: scale(1);   opacity: 1; }
+  to   { transform: scale(1.4); opacity: 0; }
+}
+
+@keyframes courier-from-right {
+  0%   { transform: translate(88vw, -26vh) rotate(-22deg) scale(0.65); opacity: 0; }
+  18%  { opacity: 1; }
+  100% { transform: translate(0, 0)        rotate(0)      scale(1);    opacity: 1; }
+}
+@keyframes courier-from-bottom {
+  0%   { transform: translate(-30vw, 95vh) rotate(18deg) scale(0.7); opacity: 0; }
+  15%  { opacity: 1; }
+  100% { transform: translate(0, 0)        rotate(0)     scale(1);    opacity: 1; }
+}
+@keyframes courier-from-top {
+  0%   { transform: translate(0, -110vh) rotate(-8deg) scale(0.85); opacity: 0; }
+  15%  { opacity: 1; }
+  100% { transform: translate(0, 0)      rotate(2deg)  scale(1);    opacity: 1; }
+}
+[data-anim="envelope"] .mail-courier { animation: courier-from-right  720ms cubic-bezier(0.25, 0.75, 0.3, 1) both; }
+[data-anim="unfold"]   .mail-courier { animation: courier-from-bottom 720ms cubic-bezier(0.25, 0.75, 0.3, 1) both; }
+[data-anim="drop"]     .mail-courier { animation: courier-from-top    720ms cubic-bezier(0.3,  0.9,  0.35, 1.05) both; }
+
+/* ── Carrier bird (envelope only) ──────────────────────────────── */
+.mail-bird {
+  position: absolute;
+  top: -3.2rem;
+  left: -3.4rem;
+  width: 4.5rem;
+  height: 4.5rem;
+  color: hsl(20 60% 28%);
+  filter: drop-shadow(0 8px 10px rgb(0 0 0 / 0.4));
+  display: inline-block;
+  animation: bird-peel-off 700ms cubic-bezier(0.4, 0, 0.5, 1) 720ms both;
+}
+.mail-bird-wings {
+  display: inline-block;
+  width: 100%;
+  height: 100%;
+  transform-origin: center;
+  animation: wing-flap 220ms ease-in-out infinite alternate;
+}
+.mail-bird-wings > svg { width: 100%; height: 100%; }
+@keyframes wing-flap {
+  from { transform: scaleY(0.75) rotate(-2deg); }
+  to   { transform: scaleY(1.15) rotate(2deg); }
+}
+@keyframes bird-peel-off {
+  0%   { transform: translate(0, 0)         rotate(-10deg); opacity: 1; }
+  100% { transform: translate(-55vw, -55vh) rotate(-44deg) scale(0.4); opacity: 0; }
+}
+
+/* === Phase 2: panel materialises in the centre === */
+@keyframes panel-pop {
+  0%   { transform: scale(0.25); opacity: 0; }
+  60%  { transform: scale(1.04); opacity: 1; }
+  100% { transform: scale(1);    opacity: 1; }
+}
+.modal-panel {
+  transform-origin: center;
+  animation: panel-pop 420ms cubic-bezier(0.34, 1.4, 0.5, 1) 720ms both;
+  perspective: 1400px;
+}
+
+/* === Phase 2: per-variant content reveal === */
+
+/* A. ENVELOPE — flap rotates open after the panel pops. */
+@keyframes envelope-flap {
+  0%   { transform: rotateX(0deg);    opacity: 1; }
+  70%  { transform: rotateX(-95deg);  opacity: 1; }
+  100% { transform: rotateX(-130deg); opacity: 0; }
+}
+[data-anim="envelope"] .anim-flap {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      hsl(35 24% 84%) 0 12px,
+      hsl(35 28% 80%) 12px 24px
+    );
+  border-bottom: 2px solid hsl(20 35% 38% / 0.55);
+  transform-origin: top center;
+  backface-visibility: hidden;
+  animation: envelope-flap 720ms cubic-bezier(0.65, 0, 0.3, 1) 1080ms both;
+  pointer-events: none;
+  z-index: 5;
+  box-shadow: 0 10px 22px -10px rgb(0 0 0 / 0.35);
+}
+[data-anim="envelope"] .anim-flap::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: hsl(20 55% 38%);
+  box-shadow: inset 0 0 0 2px hsl(20 60% 28%);
+  transform: translateX(-50%);
+}
+
+/* B. UNFOLD — sections fan open one after another. */
+@keyframes unfold-section {
+  from { transform: rotateX(-92deg); opacity: 0; }
+  to   { transform: rotateX(0deg);   opacity: 1; }
+}
+[data-anim="unfold"] .anim-section { transform-origin: top center; }
+[data-anim="unfold"] .anim-section:nth-of-type(1) { animation: unfold-section 520ms cubic-bezier(0.2, 0.85, 0.25, 1) 1080ms both; }
+[data-anim="unfold"] .anim-section:nth-of-type(2) { animation: unfold-section 520ms cubic-bezier(0.2, 0.85, 0.25, 1) 1320ms both; }
+[data-anim="unfold"] .anim-section:nth-of-type(3) { animation: unfold-section 520ms cubic-bezier(0.2, 0.85, 0.25, 1) 1540ms both; }
+
+/* C. DROP — a tiny additional bounce + tilt-settle after the panel pop. */
+@keyframes drop-settle {
+  0%   { transform: translateY(-22px) rotate(-1.8deg); }
+  55%  { transform: translateY(8px)   rotate(0.6deg); }
+  78%  { transform: translateY(-3px)  rotate(-0.2deg); }
+  100% { transform: translateY(0)     rotate(0); }
+}
+[data-anim="drop"] .modal-panel,
+[data-anim="drop"].modal-panel { /* no-op selector left for clarity */ }
+[data-anim="drop"] .anim-section:nth-of-type(1) { animation: drop-settle 600ms cubic-bezier(0.34, 1.4, 0.5, 1) 1080ms both; }
+[data-anim="drop"] .anim-section:nth-of-type(2) { animation: drop-settle 600ms cubic-bezier(0.34, 1.4, 0.5, 1) 1200ms both; }
+[data-anim="drop"] .anim-section:nth-of-type(3) { animation: drop-settle 600ms cubic-bezier(0.34, 1.4, 0.5, 1) 1320ms both; }

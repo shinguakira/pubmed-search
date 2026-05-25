@@ -3,12 +3,22 @@ import { BookmarkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSaved } from "@/hooks/useSaved";
 import { Badge } from "@/components/ui/badge";
+import type { AnimChoice } from "@/components/ArticleDrawer";
 
 interface HeaderProps {
   onOpenSaved: () => void;
+  anim: AnimChoice;
+  onAnimChange: (a: AnimChoice) => void;
 }
 
-export function Header({ onOpenSaved }: HeaderProps) {
+const ANIM_OPTIONS: { value: AnimChoice; label: string }[] = [
+  { value: "random", label: "Random" },
+  { value: "envelope", label: "Envelope" },
+  { value: "unfold", label: "Unfold" },
+  { value: "drop", label: "Drop" },
+];
+
+export function Header({ onOpenSaved, anim, onAnimChange }: HeaderProps) {
   const { items } = useSaved();
   return (
     <header className="border-b-4 border-double border-paper-rust/70 bg-paper-ink text-paper-light">
@@ -20,6 +30,28 @@ export function Header({ onOpenSaved }: HeaderProps) {
             </span>
           </Link>
           <nav className="ml-auto flex items-center gap-3 font-serif text-sm">
+            <div
+              className="flex items-center gap-1 rounded-sm border border-paper-light/30 bg-transparent p-0.5"
+              data-testid="anim-switcher"
+            >
+              <span className="px-2 font-mono text-[9px] uppercase tracking-[0.18em] text-paper-fade">
+                ANIM
+              </span>
+              {ANIM_OPTIONS.map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  onClick={() => onAnimChange(o.value)}
+                  className={`rounded-sm px-2 py-1 font-mono text-[10px] uppercase tracking-[0.12em] transition-colors ${
+                    anim === o.value
+                      ? "bg-paper-light text-paper-ink"
+                      : "text-paper-fade hover:text-paper-light"
+                  }`}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
             <Button
               variant="ghost"
               size="sm"

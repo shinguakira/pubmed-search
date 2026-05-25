@@ -11,7 +11,12 @@ import {
 } from "@/components/FiltersSidebar";
 import { ResultsToolbar } from "@/components/ResultsToolbar";
 import { ResultItem } from "@/components/ResultItem";
-import { ArticleDrawer } from "@/components/ArticleDrawer";
+import {
+  ArticleDrawer,
+  pickRandomAnim,
+  type AnimChoice,
+  type DrawerAnim,
+} from "@/components/ArticleDrawer";
 import { Pagination } from "@/components/Pagination";
 import { CiteDialog } from "@/components/CiteDialog";
 import { SavedDialog } from "@/components/SavedDialog";
@@ -55,6 +60,20 @@ export default function App() {
   const [citePmid, setCitePmid] = useState<string | null>(null);
   const [savedOpen, setSavedOpen] = useState(false);
   const [selectedPmid, setSelectedPmid] = useState<string | null>(null);
+  const [anim, setAnim] = useState<AnimChoice>("random");
+  const [resolvedAnim, setResolvedAnim] = useState<DrawerAnim>(() =>
+    pickRandomAnim(),
+  );
+
+  const handleSelectArticle = (pmid: string) => {
+    setResolvedAnim(anim === "random" ? pickRandomAnim() : anim);
+    setSelectedPmid(pmid);
+  };
+
+  const handleAnimChange = (a: AnimChoice) => {
+    setAnim(a);
+    setResolvedAnim(a === "random" ? pickRandomAnim() : a);
+  };
 
   const setParam = (patch: Record<string, string | number | null>) => {
     const next = new URLSearchParams(searchParams);
@@ -123,7 +142,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-paper-light text-paper-ink">
-      <Header onOpenSaved={() => setSavedOpen(true)} />
+      <Header
+        onOpenSaved={() => setSavedOpen(true)}
+        anim={anim}
+        onAnimChange={handleAnimChange}
+      />
       <SearchBar
         value={term}
         onSubmit={applySearch}
@@ -132,13 +155,7 @@ export default function App() {
       />
 
       <main className="w-full px-3 py-4">
-        <div
-          className={`grid grid-cols-1 gap-3 ${
-            selectedPmid
-              ? "md:grid-cols-[240px_minmax(0,1fr)_minmax(0,1.1fr)] lg:grid-cols-[260px_minmax(0,1fr)_minmax(0,1.2fr)]"
-              : "md:grid-cols-[240px_minmax(0,1fr)] lg:grid-cols-[260px_minmax(0,1fr)]"
-          }`}
-        >
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-[240px_minmax(0,1fr)] lg:grid-cols-[260px_minmax(0,1fr)]">
           <aside className="border-2 border-paper-rule/70 bg-paper-light p-3 shadow-sm shadow-paper-brown/10">
             <FiltersSidebar value={pendingFilters} onChange={setPendingFilters} />
           </aside>
@@ -186,7 +203,7 @@ export default function App() {
                       index={(page - 1) * appliedPageSize + i + 1}
                       item={r}
                       selected={selectedPmid === r.pmid}
-                      onSelect={setSelectedPmid}
+                      onSelect={handleSelectArticle}
                     />
                   ))}
                 </div>
@@ -204,15 +221,16 @@ export default function App() {
               </div>
             )}
           </section>
-
-          {selectedPmid && (
-            <ArticleDrawer
-              pmid={selectedPmid}
-              onClose={() => setSelectedPmid(null)}
-            />
-          )}
         </div>
       </main>
+
+      {selectedPmid && (
+        <ArticleDrawer
+          pmid={selectedPmid}
+          variant={resolvedAnim}
+          onClose={() => setSelectedPmid(null)}
+        />
+      )}
 
       <CiteDialog pmid={citePmid} onOpenChange={(b) => !b && setCitePmid(null)} />
       <SavedDialog open={savedOpen} onOpenChange={setSavedOpen} />
