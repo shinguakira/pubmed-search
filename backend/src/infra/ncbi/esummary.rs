@@ -5,6 +5,29 @@ use super::dto::request::esummary::EsummaryRequest;
 use super::dto::response::Summary;
 
 impl Client {
+    /// Raw `esummary.fcgi` for any `db`. Returns the unparsed JSON so
+    /// callers (e.g. the mesh handler) can pluck db-specific fields
+    /// without going through the PubMed-shaped `Summary` parser.
+    pub async fn esummary_raw(
+        &self,
+        db: &str,
+        ids: &[String],
+    ) -> anyhow::Result<serde_json::Value> {
+        if ids.is_empty() {
+            return Ok(serde_json::Value::Null);
+        }
+        let req = EsummaryRequest {
+            db: db.into(),
+            id: ids.join(","),
+            retmode: "json",
+            ident: self.ident(),
+        };
+        let url = format!("{EUTILS}/esummary.fcgi");
+        let body: serde_json::Value =
+            self.http.post(url).form(&req).send().await?.json().await?;
+        Ok(body)
+    }
+
     /// Call NCBI `esummary.fcgi`. Hydrates a batch of PMIDs into the
     /// short metadata shown in the results list (title/authors/journal/…).
     pub async fn esummary(&self, db: &str, ids: &[String]) -> anyhow::Result<Vec<Summary>> {
@@ -19,7 +42,7 @@ impl Client {
         };
         let url = format!("{EUTILS}/esummary.fcgi");
         let body: serde_json::Value =
-            self.http.get(url).query(&req).send().await?.json().await?;
+            self.http.post(url).form(&req).send().await?.json().await?;
 
         let result = &body["result"];
         let uids: Vec<String> = result["uids"]

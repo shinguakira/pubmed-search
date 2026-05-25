@@ -48,7 +48,7 @@ fn default_page() -> u32 {
     1
 }
 fn default_page_size() -> u32 {
-    20
+    100
 }
 
 /// Response body for `GET /api/search`.

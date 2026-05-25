@@ -10,7 +10,6 @@ import {
 
 import { getArticle, type ArticleDetail } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { CiteDialog } from "@/components/CiteDialog";
 import { SavedDialog } from "@/components/SavedDialog";
@@ -76,25 +75,16 @@ export function ArticlePage() {
         {data && (
           <article className="mt-4 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
             <div className="min-w-0 space-y-6">
-              <header className="space-y-3 border-b pb-6">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <Badge variant="outline" className="font-mono text-[10px]">
-                    PMID: {data.pmid}
-                  </Badge>
-                  {data.pubtypes.slice(0, 3).map((t) => (
-                    <Badge key={t} variant="soft" className="text-[10px]">
-                      {t}
-                    </Badge>
-                  ))}
-                </div>
+              <header className="space-y-2 border-b pb-5">
                 <h1
-                  className="font-serif text-3xl font-semibold leading-tight tracking-tight"
+                  className="font-serif text-2xl font-semibold leading-tight tracking-tight"
                   dangerouslySetInnerHTML={{ __html: data.title }}
                 />
                 {data.journal && (
                   <p className="text-sm italic text-muted-foreground">
                     {data.journal}
                     {data.pubdate && ` · ${data.pubdate}`}
+                    {data.doi && ` · doi:${data.doi}`}
                   </p>
                 )}
                 <p className="text-sm text-foreground/85">
@@ -122,56 +112,6 @@ export function ArticlePage() {
                   </p>
                 )}
               </section>
-
-              {data.keywords.length > 0 && (
-                <section className="space-y-2">
-                  <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                    Keywords
-                  </h2>
-                  <div className="flex flex-wrap gap-1.5">
-                    {data.keywords.map((k) => (
-                      <Badge key={k} variant="secondary" className="text-[11px]">
-                        {k}
-                      </Badge>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {data.mesh_terms.length > 0 && (
-                <section className="space-y-2">
-                  <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                    MeSH terms
-                  </h2>
-                  <div className="flex flex-wrap gap-1.5">
-                    {data.mesh_terms.map((k) => (
-                      <Badge key={k} variant="outline" className="text-[11px]">
-                        {k}
-                      </Badge>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {data.authors.some((a) => a.affiliation) && (
-                <section className="space-y-2">
-                  <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                    Affiliations
-                  </h2>
-                  <ol className="list-decimal space-y-1 pl-5 text-xs text-muted-foreground">
-                    {data.authors
-                      .filter((a) => a.affiliation)
-                      .map((a, i) => (
-                        <li key={i}>
-                          <span className="font-medium text-foreground/90">
-                            {a.fore_name} {a.last_name}
-                          </span>{" "}
-                          — {a.affiliation}
-                        </li>
-                      ))}
-                  </ol>
-                </section>
-              )}
 
               {data.references.length > 0 && (
                 <section className="space-y-2">

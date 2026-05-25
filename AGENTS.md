@@ -249,3 +249,43 @@ Treat `docs/openapi.json` like a database migration:
 3. `git diff docs/openapi.json` — sanity check what changed.
 4. Update typed client (`frontend/src/lib/api.ts`) to match.
 5. Commit handler + spec + client in one go.
+
+## 8. The default vs bulk benchmark — hands off
+
+`backend/tests/benchmark.rs` (see also `backend/tests/BENCHMARK.md`)
+compares two **deliberately distinct** NCBI access patterns:
+
+* **default** — `esearch` + `POST efetch.fcgi` with the PMIDs packed
+  into the body (id list).
+* **bulk**    — `esearch?usehistory=y` + `POST efetch.fcgi` with the
+  History server cursor (`WebEnv` + `query_key`).
+
+Both happen to return the same XML records for the same query. They
+are **not** interchangeable for engineering purposes:
+
+| Distinguisher                  | default                | bulk                                |
+|--------------------------------|------------------------|-------------------------------------|
+| State on NCBI side             | none                   | server-side cursor (~24 h)          |
+| Body size growth with N        | linear in N            | constant                            |
+| Reusable for follow-up calls   | no — must re-send IDs  | yes — same cursor for elink/efetch  |
+| Retry without original ID list | no                     | yes                                 |
+
+### Hard rules
+
+1. **Never claim the two paths are "equivalent" / "the same"** even
+   when a particular benchmark run posts similar wall times. Server
+   load, network jitter, and per-N variance are real; the access
+   patterns themselves remain different.
+2. **Never propose deleting** `backend/tests/benchmark.rs` or
+   `backend/tests/BENCHMARK.md`. The benchmark is the baseline we
+   measure regressions against.
+3. **Never propose removing the `bulk` query parameter on
+   `/api/search`** or the `FETCH MODE` toggle in the frontend search
+   bar. Both code paths and the UI control stay.
+4. **Never propose collapsing the two paths into one.** They are
+   maintained as separate paths on purpose.
+5. When numbers look close, the response is "vary N / vary term
+   selectivity / re-run later", **not** "they're the same, simplify".
+
+When extending: add scenarios, add axes, document new findings.
+Don't subtract.

@@ -14,18 +14,10 @@ export function Header({ onOpenSaved }: HeaderProps) {
     <header className="border-b-4 border-double border-paper-rust/70 bg-paper-ink text-paper-light">
       <div className="w-full px-4 py-3">
         <div className="flex items-center gap-6">
-          <Link to="/" className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center border-2 border-paper-light/80 bg-paper-light text-paper-ink">
-              <span className="font-serif text-xl font-bold leading-none">P</span>
-            </div>
-            <div className="flex flex-col leading-tight">
-              <span className="font-serif text-2xl font-bold tracking-tight">
-                The PubMed Gazette
-              </span>
-              <span className="font-mono text-[9px] uppercase tracking-[0.32em] text-paper-fade">
-                Est. 1996 · A daily journal of biomedical letters
-              </span>
-            </div>
+          <Link to="/" className="flex items-center gap-2">
+            <span className="font-serif text-xl font-bold tracking-tight">
+              PubMed
+            </span>
           </Link>
           <nav className="ml-auto flex items-center gap-3 font-serif text-sm">
             <Button

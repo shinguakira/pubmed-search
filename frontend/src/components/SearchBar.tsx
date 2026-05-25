@@ -64,7 +64,7 @@ export function SearchBar({ value, onSubmit, bulk, onBulkChange }: SearchBarProp
                 value={term}
                 onChange={(e) => setTerm(e.target.value)}
                 onFocus={() => setFocused(true)}
-                placeholder="Inquire of the archive…"
+                placeholder="Search PubMed…"
                 className="h-11 flex-1 rounded-none border-0 bg-transparent px-4 font-serif text-base text-paper-ink placeholder:font-serif placeholder:italic placeholder:text-paper-fade focus-visible:ring-0"
                 autoFocus
               />

@@ -219,7 +219,11 @@ async fn search_bulk_returns_details_and_summary() {
 }
 
 #[tokio::test]
-async fn search_default_omits_details() {
+async fn search_default_returns_details_and_abstracts() {
+    // Default mode now also returns details + abstracts (via N
+    // individual efetch calls). Just keeps the user-visible data
+    // shape parity with bulk; the toggle is purely a speed-axis
+    // comparison.
     let _gate = ncbi_gate().lock().await;
     require_network!();
     tokio::time::sleep(Duration::from_millis(400)).await;
@@ -234,11 +238,11 @@ async fn search_default_omits_details() {
         .json()
         .await
         .unwrap();
-    assert!(
-        body.get("details").map(|v| v.is_null()).unwrap_or(true),
-        "details must be absent (or null) when bulk is not set; got {:?}",
-        body.get("details")
-    );
+    let results = body["results"].as_array().expect("results array");
+    let details = body["details"].as_array().expect("details present");
+    assert_eq!(results.len(), 3);
+    assert_eq!(details.len(), 3);
+    assert!(results[0]["abstract_text"].is_string());
 }
 
 fn wall_ms(t: Instant) -> u128 {

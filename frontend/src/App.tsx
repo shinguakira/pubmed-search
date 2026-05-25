@@ -28,10 +28,9 @@ export default function App() {
   const term = searchParams.get("q") ?? "";
   const page = Number(searchParams.get("page") ?? "1");
   const appliedSort = searchParams.get("sort") ?? "relevance";
-  const appliedPageSize = Number(searchParams.get("ps") ?? "20");
+  const appliedPageSize = Number(searchParams.get("ps") ?? "100");
   const appliedBulk = searchParams.get("bulk") === "1";
   const appliedFiltersStr = searchParams.get("filters") ?? "";
-  const display = searchParams.get("display") ?? "summary";
 
   // Pending state — bound to the sidebar and toolbar controls.
   const [pendingFilters, setPendingFilters] = useState<Filters>(emptyFilters);
@@ -111,7 +110,7 @@ export default function App() {
       q: newTerm,
       page: 1,
       sort: pendingSort === "relevance" ? null : pendingSort,
-      ps: pendingPageSize === 20 ? null : pendingPageSize,
+      ps: pendingPageSize === 100 ? null : pendingPageSize,
       bulk: pendingBulk ? "1" : null,
       filters: fragments.length > 0 ? fragments.join(",") : null,
     });
@@ -136,20 +135,14 @@ export default function App() {
           </aside>
 
           <section className="min-w-0 border-2 border-paper-rule/70 bg-paper shadow-sm shadow-paper-brown/10">
-            <div className="border-b border-paper-rule/60 bg-paper-dark/40 px-6 pt-5">
-              <p className="mb-2 text-center font-serif text-[10px] uppercase tracking-[0.4em] text-paper-brown">
-                ── The PubMed Gazette · vol. 1 ──
-              </p>
+            <div className="border-b border-paper-rule/60 bg-paper-dark/40 px-6 pt-4">
               <ResultsToolbar
                 total={data?.count ?? 0}
-                query={data?.query_translation ?? term}
                 elapsedMs={data?.elapsed_ms}
                 sort={pendingSort}
                 onSortChange={setPendingSort}
                 pageSize={pendingPageSize}
                 onPageSizeChange={setPendingPageSize}
-                display={display}
-                onDisplayChange={(d) => setParam({ display: d })}
               />
             </div>
 
@@ -183,8 +176,6 @@ export default function App() {
                       key={r.pmid}
                       index={(page - 1) * appliedPageSize + i + 1}
                       item={r}
-                      display={display}
-                      onCite={setCitePmid}
                     />
                   ))}
                 </div>

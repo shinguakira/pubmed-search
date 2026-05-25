@@ -1,8 +1,13 @@
-//! `GET /api/search` — two paths:
-//! * **default**: esearch + esummary (fast, lightweight Summary).
-//! * **bulk=true**: esearch(usehistory=y) + efetch_bulk (heavier, but
-//!   returns full ArticleDetail per record so clients can prewarm an
-//!   article cache and make detail clicks instant).
+//! `GET /api/search` — two paths, **same returned data**:
+//! * **default**: esearch + `efetch` with the PMIDs packed into the
+//!   URL (`?id=p1,p2,…`). One round-trip for the whole page.
+//! * **bulk=true**: esearch(usehistory=y) + `efetch_bulk` against the
+//!   History server (`WebEnv` + `QueryKey`). Also one round-trip for
+//!   the whole page.
+//!
+//! Both paths populate `Summary.abstract_text` and warm
+//! `state.articles`. The toggle compares the two NCBI access methods:
+//! id-list-in-URL vs WebEnv cursor.
 
 use axum::extract::{Query, State};
 use axum::Json;
@@ -59,22 +64,21 @@ pub async fn search(
                 .efetch_bulk(&web_env, query_key, 0, q.page_size)
                 .await?
         };
-        // Populate the process-local article cache so a subsequent
-        // /api/article/{pmid} call for any PMID on this page is served
-        // from memory in microseconds. *This* is where the bulk speedup
-        // lands for the user — frontend stays dumb.
         state.articles.put_many(details.iter().cloned());
-        // Map ArticleDetail → Summary for the list view.
         let summaries: Vec<Summary> = details.iter().map(summary_from_detail).collect();
         (summaries, Some(details), es.count, es.querytranslation)
     } else {
-        // Default path: esearch + esummary (cheap).
+        // Default path: esearch + a single efetch with the PMIDs packed
+        // into the URL. Same number of NCBI hops as bulk; only the way
+        // the ID set is conveyed differs.
         let es = state
             .ncbi
             .esearch("pubmed", &term, retstart, q.page_size, q.sort.as_deref(), false)
             .await?;
-        let summaries = state.ncbi.esummary("pubmed", &es.ids).await?;
-        (summaries, None, es.count, es.querytranslation)
+        let details = state.ncbi.efetch_by_ids(&es.ids).await?;
+        state.articles.put_many(details.iter().cloned());
+        let summaries: Vec<Summary> = details.iter().map(summary_from_detail).collect();
+        (summaries, Some(details), es.count, es.querytranslation)
     };
 
     Ok(Json(SearchResponse {
@@ -89,10 +93,6 @@ pub async fn search(
 }
 
 /// Build the list-row `Summary` from a `efetch` `ArticleDetail`.
-/// Fields not carried in efetch XML (epubdate, volume, issue, pages,
-/// lang, short author form, journal abbreviation) are left empty or
-/// derived as best we can — esummary is still the better source for
-/// those, which is why default search uses esummary.
 fn summary_from_detail(d: &ArticleDetail) -> Summary {
     let authors_short: Vec<String> = d
         .authors

@@ -24,20 +24,14 @@ pub async fn mesh_suggest(
     State(state): State<AppState>,
     Query(q): Query<MeshQuery>,
 ) -> Result<Json<MeshResponse>, AppError> {
-    let es = state.ncbi.esearch("mesh", &q.term, 0, q.limit, None, false).await?;
-    let url = format!(
-        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=mesh&id={}&retmode=json",
-        es.ids.join(",")
-    );
+    let es = state
+        .ncbi
+        .esearch("mesh", &q.term, 0, q.limit, None, false)
+        .await?;
     let terms = if es.ids.is_empty() {
         vec![]
     } else {
-        let body: serde_json::Value = reqwest::get(&url)
-            .await
-            .map_err(anyhow::Error::from)?
-            .json()
-            .await
-            .map_err(anyhow::Error::from)?;
+        let body = state.ncbi.esummary_raw("mesh", &es.ids).await?;
         let result = &body["result"];
         es.ids
             .iter()
