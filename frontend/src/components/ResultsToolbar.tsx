@@ -5,7 +5,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 
 interface Props {
   total: number;
@@ -17,10 +16,6 @@ interface Props {
   onPageSizeChange: (n: number) => void;
   display: string;
   onDisplayChange: (d: string) => void;
-  /// When true the search uses esearch+efetch_bulk and prewarms the
-  /// per-PMID article cache so detail clicks are instant.
-  bulk: boolean;
-  onBulkChange: (b: boolean) => void;
 }
 
 export function ResultsToolbar({
@@ -33,8 +28,6 @@ export function ResultsToolbar({
   onPageSizeChange,
   display,
   onDisplayChange,
-  bulk,
-  onBulkChange,
 }: Props) {
   return (
     <div className="flex flex-col gap-2 border-b border-paper-rule/60 pb-3 sm:flex-row sm:items-center sm:justify-between">
@@ -65,7 +58,9 @@ export function ResultsToolbar({
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-paper-brown">Display</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-paper-brown">
+            Display
+          </span>
           <Select value={display} onValueChange={onDisplayChange}>
             <SelectTrigger className="h-9 w-[120px]">
               <SelectValue />
@@ -78,7 +73,9 @@ export function ResultsToolbar({
           </Select>
         </div>
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-paper-brown">Sort by</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-paper-brown">
+            Sort by
+          </span>
           <Select value={sort} onValueChange={onSortChange}>
             <SelectTrigger className="h-9 w-[160px]">
               <SelectValue />
@@ -93,7 +90,9 @@ export function ResultsToolbar({
           </Select>
         </div>
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-paper-brown">Per page</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-paper-brown">
+            Per page
+          </span>
           <Select
             value={String(pageSize)}
             onValueChange={(v) => onPageSizeChange(Number(v))}
@@ -109,39 +108,6 @@ export function ResultsToolbar({
               ))}
             </SelectContent>
           </Select>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-paper-brown">
-            Fetch
-          </span>
-          <div className="flex overflow-hidden rounded border border-paper-rule font-mono text-[10px] uppercase tracking-[0.14em]">
-            <button
-              type="button"
-              onClick={() => onBulkChange(false)}
-              className={cn(
-                "px-2.5 py-1.5 transition-colors",
-                !bulk
-                  ? "bg-paper-ink text-paper-light"
-                  : "bg-paper text-paper-brown hover:bg-paper-dark",
-              )}
-              title="esearch + esummary (light, no abstract)"
-            >
-              Default
-            </button>
-            <button
-              type="button"
-              onClick={() => onBulkChange(true)}
-              className={cn(
-                "px-2.5 py-1.5 transition-colors",
-                bulk
-                  ? "bg-paper-rust text-paper-light"
-                  : "bg-paper text-paper-brown hover:bg-paper-dark",
-              )}
-              title="esearch(usehistory) + efetch_bulk — heavier per call, but article-detail clicks become instant"
-            >
-              Bulk
-            </button>
-          </div>
         </div>
       </div>
     </div>

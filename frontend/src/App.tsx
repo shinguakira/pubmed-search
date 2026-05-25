@@ -86,7 +86,12 @@ export default function App() {
   return (
     <div className="min-h-screen bg-paper-light text-paper-ink">
       <Header onOpenSaved={() => setSavedOpen(true)} />
-      <SearchBar value={term} onSubmit={(t) => setParam({ q: t, page: 1 })} />
+      <SearchBar
+        value={term}
+        onSubmit={(t) => setParam({ q: t, page: 1 })}
+        bulk={bulk}
+        onBulkChange={(b) => setParam({ bulk: b ? "1" : null })}
+      />
 
       <main className="w-full px-3 py-4">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-[240px_minmax(0,1fr)] lg:grid-cols-[260px_minmax(0,1fr)]">
@@ -109,8 +114,6 @@ export default function App() {
                 onPageSizeChange={(n) => setParam({ ps: n, page: 1 })}
                 display={display}
                 onDisplayChange={(d) => setParam({ display: d })}
-                bulk={bulk}
-                onBulkChange={(b) => setParam({ bulk: b ? "1" : null })}
               />
             </div>
 
