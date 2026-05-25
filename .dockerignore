@@ -1,0 +1,15 @@
+# Don't bake host build artifacts or local-only state into the image.
+**/node_modules
+**/dist
+**/target
+**/.vite
+**/.next
+**/test-results
+**/playwright-report
+**/e2e-screenshots
+**/.env
+**/.env.local
+.git
+.github
+docs
+*.log

@@ -42,6 +42,20 @@ pub struct SearchQuery {
     /// open several articles" flow is dramatically lower.
     #[serde(default)]
     pub bulk: bool,
+
+    /// App-level **post-filter** keyword. Applied by *this* backend
+    /// after NCBI has already returned the page. Independent from the
+    /// PubMed query language — pure case-insensitive substring against
+    /// `title + abstract + authors + journal`. Empty / absent = no
+    /// filter.
+    #[serde(default)]
+    pub app_filter: Option<String>,
+
+    /// How to interpret matches against `app_filter`:
+    /// * `"include"` — keep only rows that match.
+    /// * `"exclude"` — drop rows that match (default).
+    #[serde(default)]
+    pub app_filter_mode: Option<String>,
 }
 
 fn default_page() -> u32 {
@@ -82,4 +96,10 @@ pub struct SearchResponse {
     /// order as `results`. Use to prewarm a client-side article cache.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub details: Option<Vec<ArticleDetail>>,
+
+    /// Size of the page slice **before** the app-filter was applied.
+    /// Only populated when `app_filter` was a non-empty term — clients
+    /// use it to render a "N / M shown after app filter" badge.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub unfiltered_count: Option<u32>,
 }

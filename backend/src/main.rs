@@ -18,11 +18,17 @@ async fn main() -> anyhow::Result<()> {
         )
         .init();
 
-    // Bind explicitly to IPv4 — Node 18+ on Windows resolves "localhost" to
-    // ::1 first, and the frontend dev server / Playwright would otherwise
-    // fail to reach us. See the matching `host: "127.0.0.1"` in
-    // `frontend/vite.config.ts`.
-    let addr: SocketAddr = "127.0.0.1:8787".parse()?;
+    // Two modes:
+    //   * dev — bind 127.0.0.1:8787 so Vite proxy / Playwright stay happy.
+    //   * container deploy — Azure Web App, Cloud Run and Fly all inject
+    //     `$PORT`; the container must listen on 0.0.0.0 to be reachable
+    //     from the platform's frontend.
+    let port: u16 = std::env::var("PORT")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(8787);
+    let host = if std::env::var("PORT").is_ok() { "0.0.0.0" } else { "127.0.0.1" };
+    let addr: SocketAddr = format!("{host}:{port}").parse()?;
     tracing::info!("listening on http://{addr}");
     let listener = tokio::net::TcpListener::bind(addr).await?;
 

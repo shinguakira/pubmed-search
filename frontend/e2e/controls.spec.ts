@@ -31,11 +31,7 @@ test("the Sort dropdown reveals the available sort orders", async ({ page }) => 
   await searchCrispr(page);
 
   // Open the Sort select (Radix renders a portal with role=listbox).
-  await page
-    .locator("section")
-    .locator('button[role="combobox"]')
-    .first()
-    .click();
+  await page.locator("section").locator('button[role="combobox"]').first().click();
   await expect(page.getByRole("option", { name: "Best match" })).toBeVisible();
 
   await page.screenshot({ path: "../docs/screenshots/05-sort-open.png", fullPage: false });

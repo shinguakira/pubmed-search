@@ -25,6 +25,9 @@ export interface SearchResponse {
   /// Present iff the request used `bulk=true`. Same length and PMID
   /// order as `results`. Use to prewarm a per-PMID article cache.
   details?: ArticleDetail[];
+  /// Present iff the request carried a non-empty `app_filter`. The
+  /// page-slice size *before* the backend applied the filter.
+  unfiltered_count?: number;
 }
 
 export interface Author {
@@ -76,8 +79,16 @@ export interface SearchParams {
   /// fills `details` in the response — heavier per call but lets the
   /// client prewarm article-detail caches.
   bulk?: boolean;
+  /// App-level post-filter keyword. Forwarded to the backend; pure
+  /// substring match against title/abstract/authors/journal.
+  appFilter?: string;
+  /// `"include"` keeps only matches, `"exclude"` drops matches.
+  appFilterMode?: "include" | "exclude";
 }
 
+// Dev: Vite injects http://127.0.0.1:8787 for the standalone backend.
+// Prod (single container): VITE_API_URL is set to "" at build time, so
+// the client makes same-origin relative requests like `/api/search`.
 const BASE = (import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8787") + "/api";
 
 async function getJson<T>(url: string): Promise<T> {
@@ -97,6 +108,10 @@ export function search(params: SearchParams): Promise<SearchResponse> {
   if (params.sort) qp.set("sort", params.sort);
   if (params.filters && params.filters.length > 0) qp.set("filters", params.filters.join(","));
   if (params.bulk) qp.set("bulk", "true");
+  if (params.appFilter && params.appFilter.trim().length > 0) {
+    qp.set("app_filter", params.appFilter.trim());
+    qp.set("app_filter_mode", params.appFilterMode ?? "exclude");
+  }
   return getJson(`${BASE}/search?${qp.toString()}`);
 }
 

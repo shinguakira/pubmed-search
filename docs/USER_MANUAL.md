@@ -108,7 +108,34 @@ truth for comparing them.
 
 ---
 
-## 5. Reading an article
+## 5. App filter (backend-side post-filter)
+
+Directly under the search bar there's a second control row labelled
+**APP FILTER** with a help icon, a keyword input, and an **Include /
+Exclude** selector. This is *not* PubMed query syntax — it's a layer
+our backend applies **after** PubMed responds, doing a
+case-insensitive substring match against `title + abstract + authors +
+journal`.
+
+- **Include** — keep only rows that contain the keyword.
+- **Exclude** — drop rows that contain the keyword.
+
+Like every other secondary control (sort, per-page, sidebar filters),
+the app filter is **staged** — typing the keyword or flipping
+include/exclude does *not* refetch. You have to press **Search** (or
+hit `Enter` inside the keyword field) for it to take effect.
+
+When the filter is active, a `X / Y shown` badge appears next to the
+mode selector — `X` is the rows you currently see, `Y` is the
+page-slice size NCBI returned before the filter was applied. The
+PubMed corpus total in the toolbar above stays the same; only the
+visible page shrinks.
+
+![App filter with Include "review" applied to crispr results](screenshots/11-app-filter.png)
+
+---
+
+## 6. Reading an article
 
 Clicking any result row opens an **article modal** centered over the
 page. The modal contains:
@@ -127,7 +154,7 @@ Press `Esc` or click the dim backdrop outside the panel to close.
 
 ---
 
-## 6. Animation variants
+## 7. Animation variants
 
 The article modal opens with a two-phase newsletter-arrival animation:
 
@@ -168,7 +195,7 @@ extra "settle" tilt as if the paper just landed on a desk.
 
 ---
 
-## 7. Keyboard shortcuts
+## 8. Keyboard shortcuts
 
 | Key                  | Action                                  |
 |----------------------|------------------------------------------|
@@ -183,7 +210,7 @@ by `jsx-a11y` because screen readers can't anticipate it).
 
 ---
 
-## 8. URLs and deep links
+## 9. URLs and deep links
 
 State is encoded in the query string so any view is shareable:
 
@@ -193,12 +220,15 @@ State is encoded in the query string so any view is shareable:
 - `/?q=crispr&sort=date` — sorted by publication date
 - `/?q=crispr&bulk=1` — bulk fetch mode
 - `/?q=crispr&filters=Review[pt],English[lang]` — apply two filters
+- `/?q=crispr&app_filter=mouse&app_filter_mode=exclude` — drop rows
+  whose text contains "mouse" (backend-side post-filter; `app_filter_mode`
+  defaults to `exclude` and is omitted from the URL when default)
 - `/article/<pmid>` — direct article page (standalone route, kept for
   shareable links; the in-page modal is the primary surface)
 
 ---
 
-## 9. Reproducing the screenshots
+## 10. Reproducing the screenshots
 
 Each screenshot in this manual is the output of a Playwright spec
 under [`frontend/e2e/`](../frontend/e2e/). To regenerate them:

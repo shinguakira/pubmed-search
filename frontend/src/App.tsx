@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 
 import { Header } from "@/components/Header";
 import { SearchBar } from "@/components/SearchBar";
+import { AppFilterBar, type AppFilterMode } from "@/components/AppFilterBar";
 import {
   FiltersSidebar,
   emptyFilters,
@@ -37,6 +38,8 @@ export default function App() {
   const appliedPageSize = Number(searchParams.get("ps") ?? "100");
   const appliedBulk = searchParams.get("bulk") === "1";
   const appliedFiltersStr = searchParams.get("filters") ?? "";
+  const appliedAppFilter = searchParams.get("app_filter") ?? "";
+  const appliedAppFilterMode = (searchParams.get("app_filter_mode") ?? "exclude") as AppFilterMode;
 
   // Pending state — bound to the sidebar and toolbar controls.
   const [pendingFilters, setPendingFilters] = useState<Filters>(emptyFilters);
@@ -62,6 +65,20 @@ export default function App() {
   const [selectedPmid, setSelectedPmid] = useState<string | null>(null);
   const [anim, setAnim] = useState<AnimChoice>("random");
   const [resolvedAnim, setResolvedAnim] = useState<DrawerAnim>(() => pickRandomAnim());
+
+  // App-filter pending state — committed to the URL (and therefore
+  // refetched by the backend) only when the Search button is pressed,
+  // exactly like the sort / per-page / sidebar-filter controls. The
+  // post-filter logic itself lives on the backend.
+  const [pendingAppFilter, setPendingAppFilter] = useState(appliedAppFilter);
+  const [pendingAppFilterMode, setPendingAppFilterMode] =
+    useState<AppFilterMode>(appliedAppFilterMode);
+  useEffect(() => {
+    setPendingAppFilter(appliedAppFilter);
+  }, [appliedAppFilter]);
+  useEffect(() => {
+    setPendingAppFilterMode(appliedAppFilterMode);
+  }, [appliedAppFilterMode]);
 
   const handleSelectArticle = (pmid: string) => {
     setResolvedAnim(anim === "random" ? pickRandomAnim() : anim);
@@ -91,7 +108,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | undefined>();
   const inflight = useRef(0);
-  const fetchKey = `${term}|${page}|${appliedPageSize}|${appliedSort}|${appliedFiltersStr}|${appliedBulk}`;
+  const fetchKey = `${term}|${page}|${appliedPageSize}|${appliedSort}|${appliedFiltersStr}|${appliedBulk}|${appliedAppFilter}|${appliedAppFilterMode}`;
   useEffect(() => {
     setSelectedPmid(null);
     if (!term.trim()) {
@@ -108,6 +125,8 @@ export default function App() {
       sort: appliedSort,
       filters: appliedFragments,
       bulk: appliedBulk,
+      appFilter: appliedAppFilter || undefined,
+      appFilterMode: appliedAppFilterMode,
     })
       .then((res) => {
         if (inflight.current === myReq) setData(res);
@@ -124,6 +143,7 @@ export default function App() {
   // Search button (and Enter in the search bar) routes through here.
   const applySearch = (newTerm: string) => {
     const fragments = filtersToQueryFragments(pendingFilters);
+    const trimmedAppFilter = pendingAppFilter.trim();
     setParam({
       q: newTerm,
       page: 1,
@@ -131,10 +151,14 @@ export default function App() {
       ps: pendingPageSize === 100 ? null : pendingPageSize,
       bulk: pendingBulk ? "1" : null,
       filters: fragments.length > 0 ? fragments.join(",") : null,
+      app_filter: trimmedAppFilter || null,
+      app_filter_mode:
+        trimmedAppFilter && pendingAppFilterMode !== "exclude" ? pendingAppFilterMode : null,
     });
   };
 
   const enabled = term.trim().length > 0;
+  const visibleResults = data?.results ?? [];
 
   return (
     <div className="min-h-screen bg-paper-light text-paper-ink">
@@ -144,6 +168,16 @@ export default function App() {
         onSubmit={applySearch}
         bulk={pendingBulk}
         onBulkChange={setPendingBulk}
+      />
+      <AppFilterBar
+        value={pendingAppFilter}
+        mode={pendingAppFilterMode}
+        onValueChange={setPendingAppFilter}
+        onModeChange={setPendingAppFilterMode}
+        onSubmit={() => applySearch(term)}
+        shownCount={data?.results.length ?? 0}
+        pageCount={data?.unfiltered_count ?? data?.results.length ?? 0}
+        active={appliedAppFilter.length > 0}
       />
 
       <main className="w-full px-3 py-4">
@@ -184,9 +218,14 @@ export default function App() {
                 <div className="py-16 text-center font-serif italic text-paper-brown">
                   No dispatches found. Try broadening the search or removing filters.
                 </div>
+              ) : visibleResults.length === 0 ? (
+                <div className="py-16 text-center font-serif italic text-paper-brown">
+                  Every result on this page was hidden by the app filter. Adjust the keyword or
+                  switch include/exclude.
+                </div>
               ) : (
                 <div>
-                  {data?.results.map((r, i) => (
+                  {visibleResults.map((r, i) => (
                     <ResultItem
                       key={r.pmid}
                       index={(page - 1) * appliedPageSize + i + 1}

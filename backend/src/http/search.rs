@@ -44,7 +44,7 @@ pub async fn search(
     }
     let retstart = q.page.saturating_sub(1) * q.page_size;
 
-    let (results, details, count, query_translation) = if q.bulk {
+    let (mut results, mut details, count, query_translation) = if q.bulk {
         // Bulk path: esearch with History → efetch_bulk for the page slice.
         let es = state
             .ncbi
@@ -81,6 +81,17 @@ pub async fn search(
         (summaries, Some(details), es.count, es.querytranslation)
     };
 
+    // App-level post-filter — runs on the page slice the backend just
+    // assembled. Independent from the PubMed query (no field tags, no
+    // boolean operators): pure case-insensitive substring match against
+    // title + abstract + authors + journal.
+    let unfiltered_count = apply_app_filter(
+        &mut results,
+        details.as_mut(),
+        q.app_filter.as_deref(),
+        q.app_filter_mode.as_deref(),
+    );
+
     Ok(Json(SearchResponse {
         count,
         page: q.page,
@@ -89,7 +100,58 @@ pub async fn search(
         elapsed_ms: started.elapsed().as_millis() as u64,
         results,
         details,
+        unfiltered_count,
     }))
+}
+
+/// Drop or keep entries in `results` (and the parallel `details` if
+/// present) based on whether each row's text contains `needle`.
+/// Returns the page-slice size *before* filtering when an active
+/// filter was applied, so the response can report a "N / M shown"
+/// badge — `None` when no filter was requested.
+fn apply_app_filter(
+    results: &mut Vec<Summary>,
+    details: Option<&mut Vec<ArticleDetail>>,
+    needle: Option<&str>,
+    mode: Option<&str>,
+) -> Option<u32> {
+    let needle = needle.map(str::trim).filter(|s| !s.is_empty())?;
+    let needle = needle.to_lowercase();
+    let include = matches!(mode, Some("include"));
+    let before = results.len() as u32;
+
+    // Build the keep-mask once so `results` and `details` stay in sync.
+    let keep: Vec<bool> = results
+        .iter()
+        .map(|r| {
+            let hay = format!(
+                "{} {} {} {}",
+                r.title,
+                r.abstract_text.as_deref().unwrap_or(""),
+                r.authors.join(" "),
+                r.source,
+            )
+            .to_lowercase();
+            let matches = hay.contains(&needle);
+            if include { matches } else { !matches }
+        })
+        .collect();
+
+    let mut idx = 0;
+    results.retain(|_| {
+        let k = keep[idx];
+        idx += 1;
+        k
+    });
+    if let Some(ds) = details {
+        let mut i = 0;
+        ds.retain(|_| {
+            let k = keep[i];
+            i += 1;
+            k
+        });
+    }
+    Some(before)
 }
 
 /// Build the list-row `Summary` from a `efetch` `ArticleDetail`.
