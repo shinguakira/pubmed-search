@@ -18,15 +18,40 @@ import { Spinner } from "@/components/ui/spinner";
 import { search, type SearchResponse } from "@/lib/api";
 
 export default function App() {
+  // URL params hold the *applied* search state. The only writers are:
+  //   * the Search button (commits everything at once)
+  //   * Pagination (page-only writes for navigation)
+  // Filter sidebar / sort / pageSize / bulk controls update local
+  // "pending" state and do NOT trigger a fetch until the user clicks
+  // Search. This matches PubMed's own apply-then-search UX.
   const [searchParams, setSearchParams] = useSearchParams();
   const term = searchParams.get("q") ?? "";
   const page = Number(searchParams.get("page") ?? "1");
-  const sort = searchParams.get("sort") ?? "relevance";
-  const pageSize = Number(searchParams.get("ps") ?? "20");
+  const appliedSort = searchParams.get("sort") ?? "relevance";
+  const appliedPageSize = Number(searchParams.get("ps") ?? "20");
+  const appliedBulk = searchParams.get("bulk") === "1";
+  const appliedFiltersStr = searchParams.get("filters") ?? "";
   const display = searchParams.get("display") ?? "summary";
-  const bulk = searchParams.get("bulk") === "1";
 
-  const [filters, setFilters] = useState<Filters>(emptyFilters);
+  // Pending state — bound to the sidebar and toolbar controls.
+  const [pendingFilters, setPendingFilters] = useState<Filters>(emptyFilters);
+  const [pendingSort, setPendingSort] = useState(appliedSort);
+  const [pendingPageSize, setPendingPageSize] = useState(appliedPageSize);
+  const [pendingBulk, setPendingBulk] = useState(appliedBulk);
+
+  // When URL changes externally (back/forward, hint chip click, etc.),
+  // pull the applied values back into pending so controls reflect what
+  // is actually shown.
+  useEffect(() => {
+    setPendingSort(appliedSort);
+  }, [appliedSort]);
+  useEffect(() => {
+    setPendingPageSize(appliedPageSize);
+  }, [appliedPageSize]);
+  useEffect(() => {
+    setPendingBulk(appliedBulk);
+  }, [appliedBulk]);
+
   const [citePmid, setCitePmid] = useState<string | null>(null);
   const [savedOpen, setSavedOpen] = useState(false);
 
@@ -39,20 +64,20 @@ export default function App() {
     setSearchParams(next, { replace: true });
   };
 
-  const fragments = filtersToQueryFragments(filters);
-  const enabled = term.trim().length > 0;
+  const appliedFragments = appliedFiltersStr
+    ? appliedFiltersStr.split(",").filter(Boolean)
+    : [];
 
+  // The single fetch effect. Reacts ONLY to URL changes — never to
+  // pending state. Filter checkboxes / sort dropdown / bulk toggle do
+  // not appear in this dependency list on purpose.
   const [data, setData] = useState<SearchResponse | undefined>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | undefined>();
-
-  // Cancel in-flight requests when params change so a slow earlier call
-  // never overwrites a faster later one.
   const inflight = useRef(0);
-  const key = `${term}|${page}|${pageSize}|${sort}|${fragments.join(",")}|${bulk}`;
-
+  const fetchKey = `${term}|${page}|${appliedPageSize}|${appliedSort}|${appliedFiltersStr}|${appliedBulk}`;
   useEffect(() => {
-    if (!enabled) {
+    if (!term.trim()) {
       setData(undefined);
       return;
     }
@@ -62,10 +87,10 @@ export default function App() {
     search({
       term,
       page,
-      pageSize,
-      sort,
-      filters: fragments,
-      bulk,
+      pageSize: appliedPageSize,
+      sort: appliedSort,
+      filters: appliedFragments,
+      bulk: appliedBulk,
     })
       .then((res) => {
         if (inflight.current === myReq) setData(res);
@@ -77,27 +102,45 @@ export default function App() {
         if (inflight.current === myReq) setLoading(false);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, enabled]);
+  }, [fetchKey]);
 
-  useEffect(() => {
-    if (page !== 1) setParam({ page: 1 });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fragments.join("|"), term, sort, pageSize]);
+  // Search button (and Enter in the search bar) routes through here.
+  const applySearch = (newTerm: string) => {
+    const fragments = filtersToQueryFragments(pendingFilters);
+    setParam({
+      q: newTerm,
+      page: 1,
+      sort: pendingSort === "relevance" ? null : pendingSort,
+      ps: pendingPageSize === 20 ? null : pendingPageSize,
+      bulk: pendingBulk ? "1" : null,
+      filters: fragments.length > 0 ? fragments.join(",") : null,
+    });
+  };
+
+  // Pending vs applied indicator — show "click Search to apply".
+  const pendingFragments = filtersToQueryFragments(pendingFilters);
+  const enabled = term.trim().length > 0;
+  const hasPendingChanges =
+    enabled &&
+    (pendingFragments.join(",") !== appliedFiltersStr ||
+      pendingSort !== appliedSort ||
+      pendingPageSize !== appliedPageSize ||
+      pendingBulk !== appliedBulk);
 
   return (
     <div className="min-h-screen bg-paper-light text-paper-ink">
       <Header onOpenSaved={() => setSavedOpen(true)} />
       <SearchBar
         value={term}
-        onSubmit={(t) => setParam({ q: t, page: 1 })}
-        bulk={bulk}
-        onBulkChange={(b) => setParam({ bulk: b ? "1" : null })}
+        onSubmit={applySearch}
+        bulk={pendingBulk}
+        onBulkChange={setPendingBulk}
       />
 
       <main className="w-full px-3 py-4">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-[240px_minmax(0,1fr)] lg:grid-cols-[260px_minmax(0,1fr)]">
           <aside className="border-2 border-paper-rule/70 bg-paper-light p-3 shadow-sm shadow-paper-brown/10">
-            <FiltersSidebar value={filters} onChange={setFilters} />
+            <FiltersSidebar value={pendingFilters} onChange={setPendingFilters} />
           </aside>
 
           <section className="min-w-0 border-2 border-paper-rule/70 bg-paper shadow-sm shadow-paper-brown/10">
@@ -109,14 +152,24 @@ export default function App() {
                 total={data?.count ?? 0}
                 query={data?.query_translation ?? term}
                 elapsedMs={data?.elapsed_ms}
-                sort={sort}
-                onSortChange={(s) => setParam({ sort: s })}
-                pageSize={pageSize}
-                onPageSizeChange={(n) => setParam({ ps: n, page: 1 })}
+                sort={pendingSort}
+                onSortChange={setPendingSort}
+                pageSize={pendingPageSize}
+                onPageSizeChange={setPendingPageSize}
                 display={display}
                 onDisplayChange={(d) => setParam({ display: d })}
               />
             </div>
+
+            {hasPendingChanges && (
+              <div className="border-b border-paper-rust/40 bg-paper-rust/10 px-6 py-2 text-center font-serif text-xs italic text-paper-rust">
+                You have unapplied changes — press{" "}
+                <span className="font-bold uppercase tracking-[0.16em]">
+                  Search
+                </span>{" "}
+                to refresh results.
+              </div>
+            )}
 
             <div className="px-6 py-2">
               {!enabled ? (
@@ -146,7 +199,7 @@ export default function App() {
                   {data?.results.map((r, i) => (
                     <ResultItem
                       key={r.pmid}
-                      index={(page - 1) * pageSize + i + 1}
+                      index={(page - 1) * appliedPageSize + i + 1}
                       item={r}
                       display={display}
                       onCite={setCitePmid}
@@ -160,7 +213,7 @@ export default function App() {
               <div className="border-t border-paper-rule/60 bg-paper-dark/40 px-6">
                 <Pagination
                   page={page}
-                  pageSize={pageSize}
+                  pageSize={appliedPageSize}
                   total={data.count}
                   onPageChange={(p) => setParam({ page: p })}
                 />
@@ -175,5 +228,3 @@ export default function App() {
     </div>
   );
 }
-
-
