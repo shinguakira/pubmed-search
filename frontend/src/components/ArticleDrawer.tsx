@@ -1,9 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { Bird, Mail, Newspaper, ScrollText, X } from "lucide-react";
+import { X } from "lucide-react";
 
 import { getArticle, type ArticleDetail } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  CarrierBird,
+  FoldedNewsletter,
+  LetterOpener,
+  RolledLetter,
+  SealedEnvelope,
+} from "@/components/icons/MailIcons";
 
 export type DrawerAnim = "envelope" | "unfold" | "drop";
 export type AnimChoice = "random" | DrawerAnim;
@@ -19,10 +26,10 @@ interface Props {
   onClose: () => void;
 }
 
-const ICONS: Record<DrawerAnim, typeof Mail> = {
-  envelope: Mail,
-  unfold: Newspaper,
-  drop: ScrollText,
+const ICONS: Record<DrawerAnim, (props: { className?: string }) => JSX.Element> = {
+  envelope: SealedEnvelope,
+  unfold: FoldedNewsletter,
+  drop: RolledLetter,
 };
 
 export function ArticleDrawer({ pmid, variant, onClose }: Props) {
@@ -80,14 +87,21 @@ export function ArticleDrawer({ pmid, variant, onClose }: Props) {
         <span className="mail-courier">
           {variant === "envelope" && (
             <span className="mail-bird">
-              <span className="mail-bird-wings">
-                <Bird strokeWidth={1.5} />
-              </span>
+              <CarrierBird />
             </span>
           )}
-          <Icon className="mail-icon" strokeWidth={1.4} />
+          <Icon className="mail-icon" />
         </span>
       </span>
+
+      {/* Envelope-only: a letter opener sweeps across the modal before
+          the flap rotates open, as if cutting the envelope along its
+          top edge. */}
+      {variant === "envelope" && (
+        <span className="anim-knife" aria-hidden>
+          <LetterOpener />
+        </span>
+      )}
 
       {/* Phase 2 — the panel itself materialises and its contents open. */}
       <aside
