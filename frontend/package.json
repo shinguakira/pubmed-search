@@ -12,7 +12,10 @@
     "fmt": "oxfmt .",
     "fmt:check": "oxfmt --check .",
     "typecheck": "tsc -b",
-    "check": "npm run fmt:check && npm run lint && npm run typecheck"
+    "check": "npm run fmt:check && npm run lint && npm run typecheck",
+    "e2e": "playwright test",
+    "e2e:headed": "playwright test --headed",
+    "e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.1.2",

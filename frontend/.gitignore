@@ -7,3 +7,9 @@ dist-ssr
 *.tsbuildinfo
 vite.config.js
 vite.config.d.ts
+
+# Playwright artifacts (HTML report + traces / videos for failures).
+# `docs/screenshots/` is NOT ignored — those PNGs are documentation
+# and get committed alongside the user manual.
+playwright-report/
+test-results/
