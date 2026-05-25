@@ -20,8 +20,15 @@ WORKDIR /app
 # caches across source edits.
 COPY package.json package-lock.json ./
 COPY frontend/package.json frontend/package.json
+# `npm install` instead of `npm ci` on purpose. The lockfile is generated
+# on Windows so it only records platform-specific optional binaries for
+# win32 (e.g. @rollup/rollup-win32-x64-msvc, @oxlint/binding-win32-…).
+# `npm ci` refuses to add the missing linux-x64-gnu variants here and the
+# build crashes at vite/rollup load time. `npm install` honours the
+# pinned versions in the lockfile but is free to fetch the matching
+# native binary for the current OS. See npm/cli#4828.
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci --workspace frontend --no-audit --no-fund
+    npm install --workspace frontend --no-audit --no-fund
 
 # Build the static bundle. VITE_API_URL="" forces same-origin relative
 # fetches at runtime ("/api/search" instead of "http://127.0.0.1:8787/api/search").
