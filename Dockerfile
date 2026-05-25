@@ -30,7 +30,7 @@ ENV VITE_API_URL=""
 RUN npm run build --workspace frontend
 
 # ───────────────────── stage 2: backend ──────────────────────
-FROM rust:1.84-slim-bookworm AS backend
+FROM rust:1.88-slim-bookworm AS backend
 WORKDIR /app/backend
 RUN apt-get update \
     && apt-get install -y --no-install-recommends pkg-config ca-certificates \
