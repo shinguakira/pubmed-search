@@ -18,15 +18,17 @@ WORKDIR /app
 # Repo uses npm workspaces — the lockfile lives at the root, not inside
 # frontend/. Bring both package.json files in first so the install layer
 # caches across source edits.
-COPY package.json package-lock.json ./
+#
+# We deliberately DO NOT copy `package-lock.json` into the container.
+# The host lockfile was generated on Windows and only records win32
+# platform-specific optional binaries (@rollup/rollup-win32-…,
+# @oxlint/binding-win32-…, @oxfmt/binding-win32-…). Both `npm ci` and
+# `npm install` against that lockfile in a Linux base image refuse to
+# fetch the matching `-linux-x64-gnu` variants — rollup then crashes at
+# vite-build time with `Cannot find module @rollup/rollup-linux-x64-gnu`
+# (npm/cli#4828). Resolving fresh in-container avoids the bug entirely.
+COPY package.json ./
 COPY frontend/package.json frontend/package.json
-# `npm install` instead of `npm ci` on purpose. The lockfile is generated
-# on Windows so it only records platform-specific optional binaries for
-# win32 (e.g. @rollup/rollup-win32-x64-msvc, @oxlint/binding-win32-…).
-# `npm ci` refuses to add the missing linux-x64-gnu variants here and the
-# build crashes at vite/rollup load time. `npm install` honours the
-# pinned versions in the lockfile but is free to fetch the matching
-# native binary for the current OS. See npm/cli#4828.
 RUN --mount=type=cache,target=/root/.npm \
     npm install --workspace frontend --no-audit --no-fund
 
