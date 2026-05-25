@@ -26,6 +26,13 @@ export function SearchBar({ value, onSubmit, bulk, onBulkChange }: SearchBarProp
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [focused, setFocused] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Focus the search input on mount (replaces the JSX autoFocus attribute,
+  // which jsx-a11y discourages because screen readers can't anticipate it).
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   // Close the hint dropdown on outside click.
   useEffect(() => {
@@ -61,12 +68,12 @@ export function SearchBar({ value, onSubmit, bulk, onBulkChange }: SearchBarProp
           <div ref={wrapRef} className="relative">
             <div className="flex w-full items-stretch overflow-hidden border-2 border-paper-ink bg-paper focus-within:border-paper-rust">
               <Input
+                ref={inputRef}
                 value={term}
                 onChange={(e) => setTerm(e.target.value)}
                 onFocus={() => setFocused(true)}
                 placeholder="Search PubMed…"
                 className="h-11 flex-1 rounded-none border-0 bg-transparent px-4 font-serif text-base text-paper-ink placeholder:font-serif placeholder:italic placeholder:text-paper-fade focus-visible:ring-0"
-                autoFocus
               />
               <Button
                 type="submit"

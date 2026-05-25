@@ -73,11 +73,19 @@ export function ArticleDrawer({ pmid, variant, onClose }: Props) {
   if (!pmid) return null;
   const Icon = ICONS[variant];
 
+  // Only close when the click actually starts on the backdrop itself —
+  // a press-and-drag from inside the panel that releases on the backdrop
+  // would otherwise close unexpectedly.
+  const onBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) onClose();
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-paper-ink/45 backdrop-blur-[2px]"
       data-anim={variant}
-      onClick={onClose}
+      role="presentation"
+      onClick={onBackdropClick}
       data-testid="article-modal-backdrop"
     >
       {/* Phase 1 — a paper/mail icon flies from off-screen toward centre.
@@ -104,11 +112,13 @@ export function ArticleDrawer({ pmid, variant, onClose }: Props) {
       )}
 
       {/* Phase 2 — the panel itself materialises and its contents open. */}
-      <aside
+      <dialog
+        open
         key={`${pmid}-${variant}`}
         data-testid="article-drawer"
-        className="modal-panel relative max-h-[88vh] w-[92vw] max-w-3xl overflow-y-auto border-2 border-paper-rule/70 bg-paper shadow-2xl shadow-paper-ink/40"
-        onClick={(e) => e.stopPropagation()}
+        aria-modal="true"
+        aria-label={`Article PMID ${pmid}`}
+        className="modal-panel relative m-0 max-h-[88vh] w-[92vw] max-w-3xl overflow-y-auto border-2 border-paper-rule/70 bg-paper p-0 shadow-2xl shadow-paper-ink/40"
       >
         {variant === "envelope" && <span className="anim-flap" aria-hidden />}
 
@@ -189,8 +199,8 @@ export function ArticleDrawer({ pmid, variant, onClose }: Props) {
                 </h2>
                 {data.abstract_text ? (
                   <div className="space-y-3 font-serif text-[14px] leading-relaxed text-paper-ink/90">
-                    {data.abstract_text.split("\n\n").map((p, i) => (
-                      <p key={i} className="whitespace-pre-line">
+                    {data.abstract_text.split("\n\n").map((p) => (
+                      <p key={p} className="whitespace-pre-line">
                         {p}
                       </p>
                     ))}
@@ -208,8 +218,11 @@ export function ArticleDrawer({ pmid, variant, onClose }: Props) {
                     References ({data.references.length})
                   </h2>
                   <ol className="list-decimal space-y-1.5 pl-5 text-[11px] text-paper-ink/80">
-                    {data.references.map((r, i) => (
-                      <li key={i} className="leading-snug">
+                    {data.references.map((r) => (
+                      <li
+                        key={r.pmid ?? r.doi ?? r.citation}
+                        className="leading-snug"
+                      >
                         {r.citation || (
                           <span className="italic text-paper-brown">
                             (no citation text)
@@ -239,7 +252,7 @@ export function ArticleDrawer({ pmid, variant, onClose }: Props) {
             </article>
           )}
         </div>
-      </aside>
+      </dialog>
     </div>
   );
 }

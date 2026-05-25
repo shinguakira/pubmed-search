@@ -100,8 +100,8 @@ export function ArticlePage() {
                 </h2>
                 {data.abstract_text ? (
                   <div className="space-y-4 font-serif text-[15px] leading-relaxed text-foreground/90">
-                    {data.abstract_text.split("\n\n").map((p, i) => (
-                      <p key={i} className="whitespace-pre-line">
+                    {data.abstract_text.split("\n\n").map((p) => (
+                      <p key={p} className="whitespace-pre-line">
                         {p}
                       </p>
                     ))}
@@ -119,8 +119,11 @@ export function ArticlePage() {
                     References ({data.references.length})
                   </h2>
                   <ol className="list-decimal space-y-1.5 pl-5 text-xs text-foreground/80">
-                    {data.references.map((r, i) => (
-                      <li key={i} className="leading-snug">
+                    {data.references.map((r) => (
+                      <li
+                        key={r.pmid ?? r.doi ?? r.citation}
+                        className="leading-snug"
+                      >
                         {r.citation || (
                           <span className="italic text-muted-foreground">
                             (no citation text)

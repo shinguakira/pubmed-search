@@ -11,8 +11,9 @@ export function ResultItem({ index, item, selected, onSelect }: Props) {
   const year = (item.pubdate || "").split(/\s|;/)[0] || item.pubdate;
 
   return (
-    <article
-      className={`grid cursor-pointer grid-cols-[40px_minmax(0,1fr)] gap-3 border-b border-paper-rule/60 py-3 last:border-b-0 ${
+    <button
+      type="button"
+      className={`grid w-full cursor-pointer grid-cols-[40px_minmax(0,1fr)] gap-3 border-b border-paper-rule/60 py-3 text-left last:border-b-0 focus:outline-none focus-visible:bg-paper-dark/25 ${
         selected ? "bg-paper-dark/30" : "hover:bg-paper-dark/15"
       }`}
       onClick={() => onSelect(item.pmid)}
@@ -44,6 +45,6 @@ export function ResultItem({ index, item, selected, onSelect }: Props) {
           </p>
         )}
       </div>
-    </article>
+    </button>
   );
 }

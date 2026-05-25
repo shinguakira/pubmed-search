@@ -22,8 +22,7 @@ const LABEL_SIZE = {
 
 export function Spinner({ size = "md", label, className }: SpinnerProps) {
   return (
-    <div
-      role="status"
+    <output
       aria-live="polite"
       className={cn("inline-flex items-center gap-2 text-paper-rust", className)}
     >
@@ -39,6 +38,6 @@ export function Spinner({ size = "md", label, className }: SpinnerProps) {
         </span>
       )}
       {!label && <span className="sr-only">Loading…</span>}
-    </div>
+    </output>
   );
 }

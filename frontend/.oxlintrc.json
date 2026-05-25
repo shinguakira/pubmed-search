@@ -1,0 +1,43 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "react",
+    "react-hooks",
+    "typescript",
+    "import",
+    "jsx-a11y",
+    "unicorn",
+    "oxc"
+  ],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "perf": "warn",
+    "style": "off",
+    "pedantic": "off",
+    "nursery": "off",
+    "restriction": "off"
+  },
+  "env": {
+    "browser": true,
+    "es2024": true,
+    "node": true,
+    "builtin": true
+  },
+  "ignorePatterns": [
+    "dist/**",
+    "node_modules/**",
+    "**/*.d.ts"
+  ],
+  "rules": {
+    "no-console": "warn",
+    "no-debugger": "error",
+    "react/jsx-key": "error",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn",
+    "typescript/no-explicit-any": "warn",
+    "import/no-unassigned-import": ["warn", { "allow": ["**/*.css"] }],
+
+    "react/react-in-jsx-scope": "off"
+  }
+}
