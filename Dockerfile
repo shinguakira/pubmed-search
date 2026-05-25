@@ -2,7 +2,8 @@
 #
 # Single-container production image for the PubMed-search app.
 #
-#   stage 1 (frontend) — `npm run build` produces frontend/dist/
+#   stage 1 (frontend) — `npm ci -w frontend && npm run build -w frontend`
+#                        produces frontend/dist/
 #   stage 2 (backend)  — `cargo build --release` produces the Axum binary
 #   stage 3 (runtime)  — Debian slim with just the binary + frontend dist
 #
@@ -12,17 +13,21 @@
 
 # ───────────────────── stage 1: frontend ─────────────────────
 FROM node:20-bookworm-slim AS frontend
-WORKDIR /app/frontend
+WORKDIR /app
 
-# Install deps with the project's lockfile so the build is reproducible.
-COPY frontend/package.json frontend/package-lock.json* ./
-RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund
+# Repo uses npm workspaces — the lockfile lives at the root, not inside
+# frontend/. Bring both package.json files in first so the install layer
+# caches across source edits.
+COPY package.json package-lock.json ./
+COPY frontend/package.json frontend/package.json
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --workspace frontend --no-audit --no-fund
 
 # Build the static bundle. VITE_API_URL="" forces same-origin relative
 # fetches at runtime ("/api/search" instead of "http://127.0.0.1:8787/api/search").
-COPY frontend/ ./
+COPY frontend/ frontend/
 ENV VITE_API_URL=""
-RUN npm run build
+RUN npm run build --workspace frontend
 
 # ───────────────────── stage 2: backend ──────────────────────
 FROM rust:1.84-slim-bookworm AS backend
