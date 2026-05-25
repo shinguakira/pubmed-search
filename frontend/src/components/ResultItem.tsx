@@ -91,6 +91,12 @@ export function ResultItem({ index, item, display = "summary", onCite }: Props) 
           )}
         </p>
 
+        {item.abstract_text && (
+          <p className="mt-1.5 line-clamp-3 font-serif text-[13px] leading-snug text-paper-ink/80">
+            {item.abstract_text}
+          </p>
+        )}
+
         <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-0 font-serif text-[12px] text-paper-rust">
           <button
             type="button"

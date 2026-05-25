@@ -78,6 +78,7 @@ impl Client {
                     .and_then(|a| a.first().and_then(|v| v.as_str()))
                     .unwrap_or("")
                     .to_string(),
+                abstract_text: None,
             });
         }
         Ok(out)

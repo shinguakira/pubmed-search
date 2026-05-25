@@ -173,6 +173,48 @@ export function ArticlePage() {
                   </ol>
                 </section>
               )}
+
+              {data.references.length > 0 && (
+                <section className="space-y-2">
+                  <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                    References ({data.references.length})
+                  </h2>
+                  <ol className="list-decimal space-y-1.5 pl-5 text-xs text-foreground/80">
+                    {data.references.map((r, i) => (
+                      <li key={i} className="leading-snug">
+                        {r.citation || (
+                          <span className="italic text-muted-foreground">
+                            (no citation text)
+                          </span>
+                        )}
+                        {(r.pmid || r.doi) && (
+                          <span className="ml-1 font-mono text-[10px] text-muted-foreground">
+                            {r.pmid && (
+                              <Link
+                                to={`/article/${r.pmid}`}
+                                className="text-pubmed hover:underline"
+                              >
+                                PMID {r.pmid}
+                              </Link>
+                            )}
+                            {r.pmid && r.doi && " · "}
+                            {r.doi && (
+                              <a
+                                href={`https://doi.org/${r.doi}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-pubmed hover:underline"
+                              >
+                                DOI {r.doi}
+                              </a>
+                            )}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              )}
             </div>
 
             <aside className="space-y-3">

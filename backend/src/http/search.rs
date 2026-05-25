@@ -119,5 +119,6 @@ fn summary_from_detail(d: &ArticleDetail) -> Summary {
         doi: d.doi.clone(),
         pubtypes: d.pubtypes.clone(),
         lang: String::new(),
+        abstract_text: Some(d.abstract_text.clone()),
     }
 }

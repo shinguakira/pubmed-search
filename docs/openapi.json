@@ -244,7 +244,7 @@
     "schemas": {
       "ArticleDetail": {
         "type": "object",
-        "description": "Full article record parsed out of NCBI `efetch` XML.\n\nReturned by `GET /api/article/{pmid}`. Compared to `Summary`,\nthis carries the abstract text, author affiliations, MeSH terms,\nand author-supplied keywords.",
+        "description": "Full article record parsed out of NCBI `efetch` XML.\n\nReturned by `GET /api/article/{pmid}`. Compared to `Summary`,\nthis carries the abstract text, author affiliations, MeSH terms,\nauthor-supplied keywords, and the cited reference list.",
         "required": [
           "pmid",
           "title",
@@ -255,7 +255,8 @@
           "doi",
           "keywords",
           "mesh_terms",
-          "pubtypes"
+          "pubtypes",
+          "references"
         ],
         "properties": {
           "abstract_text": {
@@ -305,6 +306,13 @@
               "type": "string"
             },
             "description": "Publication-type labels (`Journal Article`, `Review`, …). Same\nshape as `Summary.pubtypes`."
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Reference"
+            },
+            "description": "Cited references parsed from `<ReferenceList>` in the source XML.\nEmpty for older records whose references aren't indexed in the\nPubMed XML, even when they exist on the publisher's site."
           },
           "title": {
             "type": "string",
@@ -427,6 +435,33 @@
           }
         }
       },
+      "Reference": {
+        "type": "object",
+        "description": "A single bibliographic reference cited by the article.\n\nPubMed's reference indexing is uneven: many older records have\nnone; modern ones often have the full list, sometimes with linked\nPMIDs and DOIs for cross-navigation.",
+        "required": [
+          "citation"
+        ],
+        "properties": {
+          "citation": {
+            "type": "string",
+            "description": "Free-text citation string (\"Smith J et al. Nature. 2024;…\").\nEmpty when the source only exposed identifiers."
+          },
+          "doi": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "DOI of the cited article, if NCBI indexed one."
+          },
+          "pmid": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "PubMed ID of the cited article, if NCBI indexed one."
+          }
+        }
+      },
       "SearchResponse": {
         "type": "object",
         "description": "Response body for `GET /api/search`.",
@@ -504,6 +539,13 @@
           "lang"
         ],
         "properties": {
+          "abstract_text": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Abstract text. Populated only when the search request used\n`bulk=true` (the bulk path fetches the full record via efetch).\n`None` on the default esummary path, which doesn't include\nabstracts."
+          },
           "authors": {
             "type": "array",
             "items": {

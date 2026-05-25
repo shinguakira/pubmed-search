@@ -13,7 +13,7 @@
 //!   the bulk parser and picks the matching record (falls back to the
 //!   first one).
 
-use super::dto::response::{ArticleDetail, Author};
+use super::dto::response::{ArticleDetail, Author, Reference};
 
 pub(super) fn parse_pubmed_xml(xml: &str, pmid: &str) -> anyhow::Result<ArticleDetail> {
     let mut all = parse_pubmed_xml_bulk(xml)?;
@@ -58,6 +58,13 @@ pub(super) fn parse_pubmed_xml_bulk(xml: &str) -> anyhow::Result<Vec<ArticleDeta
                         affiliation: String::new(),
                     });
                 }
+                if name == "Reference" {
+                    b.cur_reference = Some(Reference {
+                        citation: String::new(),
+                        pmid: None,
+                        doi: None,
+                    });
+                }
                 if name == "AbstractText" {
                     b.current_abs_label.clear();
                     for attr in e.attributes().flatten() {
@@ -88,6 +95,12 @@ pub(super) fn parse_pubmed_xml_bulk(xml: &str) -> anyhow::Result<Vec<ArticleDeta
                             b.authors.push(a);
                         }
                     }
+                } else if name == "Reference" {
+                    if let Some(b) = cur.as_mut() {
+                        if let Some(r) = b.cur_reference.take() {
+                            b.references.push(r);
+                        }
+                    }
                 }
                 path.pop();
             }
@@ -102,6 +115,26 @@ pub(super) fn parse_pubmed_xml_bulk(xml: &str) -> anyhow::Result<Vec<ArticleDeta
                     .cloned()
                     .unwrap_or_default();
                 let top = path.last().cloned().unwrap_or_default();
+
+                // References live inside <ReferenceList><Reference>… and
+                // are handled before the generic article-level matchers
+                // so their nested elements don't bleed into article
+                // fields (the cited paper's title is not the article's
+                // title, etc.).
+                if let Some(r) = b.cur_reference.as_mut() {
+                    match top.as_str() {
+                        "Citation" => r.citation.push_str(&text),
+                        "ArticleId" if b.cur_id_type == "pubmed" => {
+                            r.pmid = Some(text);
+                        }
+                        "ArticleId" if b.cur_id_type == "doi" => {
+                            r.doi = Some(text);
+                        }
+                        _ => {}
+                    }
+                    continue;
+                }
+
                 match top.as_str() {
                     "PMID" if parent == "MedlineCitation" => b.pmid = text,
                     "ArticleTitle" => b.title.push_str(&text),
@@ -159,6 +192,8 @@ struct ArticleBuilder {
     keywords: Vec<String>,
     mesh: Vec<String>,
     pubtypes: Vec<String>,
+    references: Vec<Reference>,
+    cur_reference: Option<Reference>,
 }
 
 impl ArticleBuilder {
@@ -196,6 +231,7 @@ impl ArticleBuilder {
             keywords: self.keywords,
             mesh_terms: self.mesh,
             pubtypes: self.pubtypes,
+            references: self.references,
         }
     }
 }

@@ -5,7 +5,7 @@ use utoipa::ToSchema;
 ///
 /// Returned by `GET /api/article/{pmid}`. Compared to `Summary`,
 /// this carries the abstract text, author affiliations, MeSH terms,
-/// and author-supplied keywords.
+/// author-supplied keywords, and the cited reference list.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ArticleDetail {
     /// PubMed unique identifier, echoed back from the request.
@@ -44,6 +44,11 @@ pub struct ArticleDetail {
     /// Publication-type labels (`Journal Article`, `Review`, …). Same
     /// shape as `Summary.pubtypes`.
     pub pubtypes: Vec<String>,
+
+    /// Cited references parsed from `<ReferenceList>` in the source XML.
+    /// Empty for older records whose references aren't indexed in the
+    /// PubMed XML, even when they exist on the publisher's site.
+    pub references: Vec<Reference>,
 }
 
 /// One author record from `efetch` XML.
@@ -62,4 +67,22 @@ pub struct Author {
     /// Free-text affiliation string. May contain a full address, ORCID,
     /// or email — we preserve NCBI's content verbatim.
     pub affiliation: String,
+}
+
+/// A single bibliographic reference cited by the article.
+///
+/// PubMed's reference indexing is uneven: many older records have
+/// none; modern ones often have the full list, sometimes with linked
+/// PMIDs and DOIs for cross-navigation.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct Reference {
+    /// Free-text citation string ("Smith J et al. Nature. 2024;…").
+    /// Empty when the source only exposed identifiers.
+    pub citation: String,
+
+    /// PubMed ID of the cited article, if NCBI indexed one.
+    pub pmid: Option<String>,
+
+    /// DOI of the cited article, if NCBI indexed one.
+    pub doi: Option<String>,
 }

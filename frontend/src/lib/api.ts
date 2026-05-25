@@ -11,6 +11,8 @@ export interface Summary {
   doi: string;
   pubtypes: string[];
   lang: string;
+  /// Populated only when the search request was `bulk=true`.
+  abstract_text?: string;
 }
 
 export interface SearchResponse {
@@ -31,6 +33,12 @@ export interface Author {
   affiliation: string;
 }
 
+export interface Reference {
+  citation: string;
+  pmid?: string;
+  doi?: string;
+}
+
 export interface ArticleDetail {
   pmid: string;
   title: string;
@@ -42,6 +50,7 @@ export interface ArticleDetail {
   keywords: string[];
   mesh_terms: string[];
   pubtypes: string[];
+  references: Reference[];
 }
 
 export interface MeshTerm {

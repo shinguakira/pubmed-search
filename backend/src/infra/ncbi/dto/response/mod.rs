@@ -10,6 +10,6 @@ pub mod article;
 pub mod esearch;
 pub mod summary;
 
-pub use article::{ArticleDetail, Author};
+pub use article::{ArticleDetail, Author, Reference};
 pub use esearch::EsearchResult;
 pub use summary::Summary;

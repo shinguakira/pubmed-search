@@ -17,4 +17,4 @@ mod esummary;
 mod xml;
 
 pub use client::Client;
-pub use dto::response::{ArticleDetail, Author, EsearchResult, Summary};
+pub use dto::response::{ArticleDetail, Author, EsearchResult, Reference, Summary};

@@ -88,78 +88,76 @@ export default function App() {
       <Header onOpenSaved={() => setSavedOpen(true)} />
       <SearchBar value={term} onSubmit={(t) => setParam({ q: t, page: 1 })} />
 
-      {!enabled ? (
-        <EmptyState onPick={(t) => setParam({ q: t, page: 1 })} />
-      ) : (
-        <main className="w-full px-3 py-4">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-[240px_minmax(0,1fr)] lg:grid-cols-[260px_minmax(0,1fr)]">
-            <aside className="border-2 border-paper-rule/70 bg-paper-light p-3 shadow-sm shadow-paper-brown/10">
-              <FiltersSidebar value={filters} onChange={setFilters} />
-            </aside>
+      <main className="w-full px-3 py-4">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-[240px_minmax(0,1fr)] lg:grid-cols-[260px_minmax(0,1fr)]">
+          <aside className="border-2 border-paper-rule/70 bg-paper-light p-3 shadow-sm shadow-paper-brown/10">
+            <FiltersSidebar value={filters} onChange={setFilters} />
+          </aside>
 
-            <section className="min-w-0 border-2 border-paper-rule/70 bg-paper shadow-sm shadow-paper-brown/10">
-              <div className="border-b border-paper-rule/60 bg-paper-dark/40 px-6 pt-5">
-                <p className="mb-2 text-center font-serif text-[10px] uppercase tracking-[0.4em] text-paper-brown">
-                  ── The PubMed Gazette · vol. 1 ──
-                </p>
-                <ResultsToolbar
-                  total={data?.count ?? 0}
-                  query={data?.query_translation ?? term}
-                  elapsedMs={data?.elapsed_ms}
-                  sort={sort}
-                  onSortChange={(s) => setParam({ sort: s })}
-                  pageSize={pageSize}
-                  onPageSizeChange={(n) => setParam({ ps: n, page: 1 })}
-                  display={display}
-                  onDisplayChange={(d) => setParam({ display: d })}
-                  bulk={bulk}
-                  onBulkChange={(b) => setParam({ bulk: b ? "1" : null })}
-                />
-              </div>
+          <section className="min-w-0 border-2 border-paper-rule/70 bg-paper shadow-sm shadow-paper-brown/10">
+            <div className="border-b border-paper-rule/60 bg-paper-dark/40 px-6 pt-5">
+              <p className="mb-2 text-center font-serif text-[10px] uppercase tracking-[0.4em] text-paper-brown">
+                ── The PubMed Gazette · vol. 1 ──
+              </p>
+              <ResultsToolbar
+                total={data?.count ?? 0}
+                query={data?.query_translation ?? term}
+                elapsedMs={data?.elapsed_ms}
+                sort={sort}
+                onSortChange={(s) => setParam({ sort: s })}
+                pageSize={pageSize}
+                onPageSizeChange={(n) => setParam({ ps: n, page: 1 })}
+                display={display}
+                onDisplayChange={(d) => setParam({ display: d })}
+                bulk={bulk}
+                onBulkChange={(b) => setParam({ bulk: b ? "1" : null })}
+              />
+            </div>
 
-              <div className="px-6 py-2">
-                {error && (
-                  <div className="my-4 rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
-                    {error.message}
-                  </div>
-                )}
-
-                {loading && !data ? (
-                  <ResultsSkeleton />
-                ) : data?.results.length === 0 ? (
-                  <div className="py-16 text-center font-serif italic text-paper-brown">
-                    No dispatches found. Try broadening the search or removing
-                    filters.
-                  </div>
-                ) : (
-                  <div>
-                    {data?.results.map((r, i) => (
-                      <ResultItem
-                        key={r.pmid}
-                        index={(page - 1) * pageSize + i + 1}
-                        item={r}
-                        display={display}
-                        onCite={setCitePmid}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {data && data.count > 0 && (
-                <div className="border-t border-paper-rule/60 bg-paper-dark/40 px-6">
-                  <Pagination
-                    page={page}
-                    pageSize={pageSize}
-                    total={data.count}
-                    onPageChange={(p) => setParam({ page: p })}
-                  />
+            <div className="px-6 py-2">
+              {!enabled ? (
+                <div className="py-16 text-center font-serif italic text-paper-brown">
+                  Enter a query in the search bar above to begin.
+                </div>
+              ) : error ? (
+                <div className="my-4 rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+                  {error.message}
+                </div>
+              ) : loading && !data ? (
+                <ResultsSkeleton />
+              ) : data?.results.length === 0 ? (
+                <div className="py-16 text-center font-serif italic text-paper-brown">
+                  No dispatches found. Try broadening the search or removing
+                  filters.
+                </div>
+              ) : (
+                <div>
+                  {data?.results.map((r, i) => (
+                    <ResultItem
+                      key={r.pmid}
+                      index={(page - 1) * pageSize + i + 1}
+                      item={r}
+                      display={display}
+                      onCite={setCitePmid}
+                    />
+                  ))}
                 </div>
               )}
-            </section>
-          </div>
-        </main>
-      )}
+            </div>
+
+            {data && data.count > 0 && (
+              <div className="border-t border-paper-rule/60 bg-paper-dark/40 px-6">
+                <Pagination
+                  page={page}
+                  pageSize={pageSize}
+                  total={data.count}
+                  onPageChange={(p) => setParam({ page: p })}
+                />
+              </div>
+            )}
+          </section>
+        </div>
+      </main>
 
       <CiteDialog pmid={citePmid} onOpenChange={(b) => !b && setCitePmid(null)} />
       <SavedDialog open={savedOpen} onOpenChange={setSavedOpen} />
@@ -181,39 +179,3 @@ function ResultsSkeleton() {
   );
 }
 
-const SUGGESTED = [
-  "CRISPR Cas9",
-  "long covid",
-  "GLP-1 receptor agonists",
-  "Alzheimer disease biomarkers",
-  "machine learning radiology",
-];
-
-function EmptyState({ onPick }: { onPick: (t: string) => void }) {
-  return (
-    <main className="w-full px-4 py-16">
-      <div className="mx-auto max-w-2xl text-center">
-        <p className="font-mono text-[10px] uppercase tracking-[0.4em] text-paper-brown">
-          ── No. 1 · Today's Edition ──
-        </p>
-        <h1 className="mt-3 font-serif text-4xl font-bold tracking-tight text-paper-ink">
-          Thirty million letters from the biomedical archive.
-        </h1>
-        <p className="mt-4 font-serif text-base italic text-paper-sepia">
-          Make an inquiry above, or peruse one of today's trending subjects.
-        </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-2">
-          {SUGGESTED.map((s) => (
-            <button
-              key={s}
-              onClick={() => onPick(s)}
-              className="border border-paper-rule bg-paper px-3 py-1 font-serif text-sm italic text-paper-sepia transition-colors hover:border-paper-rust hover:text-paper-rust"
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      </div>
-    </main>
-  );
-}

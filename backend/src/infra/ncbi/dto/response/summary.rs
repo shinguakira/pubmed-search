@@ -51,4 +51,11 @@ pub struct Summary {
 
     /// ISO 639-2 language code (`eng`, `jpn`, …). Empty if missing.
     pub lang: String,
+
+    /// Abstract text. Populated only when the search request used
+    /// `bulk=true` (the bulk path fetches the full record via efetch).
+    /// `None` on the default esummary path, which doesn't include
+    /// abstracts.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub abstract_text: Option<String>,
 }
