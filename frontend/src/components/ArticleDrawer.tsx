@@ -187,9 +187,7 @@ export function ArticleDrawer({ pmid, variant, onClose }: Props) {
                   </p>
                 )}
                 <p className="text-xs text-paper-ink/85">
-                  {data.authors
-                    .map((a) => `${a.fore_name} ${a.last_name}`.trim())
-                    .join(", ")}
+                  {data.authors.map((a) => `${a.fore_name} ${a.last_name}`.trim()).join(", ")}
                 </p>
               </header>
 
@@ -206,9 +204,7 @@ export function ArticleDrawer({ pmid, variant, onClose }: Props) {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs italic text-paper-brown">
-                    No abstract available.
-                  </p>
+                  <p className="text-xs italic text-paper-brown">No abstract available.</p>
                 )}
               </section>
 
@@ -219,14 +215,9 @@ export function ArticleDrawer({ pmid, variant, onClose }: Props) {
                   </h2>
                   <ol className="list-decimal space-y-1.5 pl-5 text-[11px] text-paper-ink/80">
                     {data.references.map((r) => (
-                      <li
-                        key={r.pmid ?? r.doi ?? r.citation}
-                        className="leading-snug"
-                      >
+                      <li key={r.pmid ?? r.doi ?? r.citation} className="leading-snug">
                         {r.citation || (
-                          <span className="italic text-paper-brown">
-                            (no citation text)
-                          </span>
+                          <span className="italic text-paper-brown">(no citation text)</span>
                         )}
                         {(r.pmid || r.doi) && (
                           <span className="ml-1 font-mono text-[10px] text-paper-brown">

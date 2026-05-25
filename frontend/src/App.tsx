@@ -61,9 +61,7 @@ export default function App() {
   const [savedOpen, setSavedOpen] = useState(false);
   const [selectedPmid, setSelectedPmid] = useState<string | null>(null);
   const [anim, setAnim] = useState<AnimChoice>("random");
-  const [resolvedAnim, setResolvedAnim] = useState<DrawerAnim>(() =>
-    pickRandomAnim(),
-  );
+  const [resolvedAnim, setResolvedAnim] = useState<DrawerAnim>(() => pickRandomAnim());
 
   const handleSelectArticle = (pmid: string) => {
     setResolvedAnim(anim === "random" ? pickRandomAnim() : anim);
@@ -84,9 +82,7 @@ export default function App() {
     setSearchParams(next, { replace: true });
   };
 
-  const appliedFragments = appliedFiltersStr
-    ? appliedFiltersStr.split(",").filter(Boolean)
-    : [];
+  const appliedFragments = appliedFiltersStr ? appliedFiltersStr.split(",").filter(Boolean) : [];
 
   // The single fetch effect. Reacts ONLY to URL changes — never to
   // pending state. Filter checkboxes / sort dropdown / bulk toggle do
@@ -142,11 +138,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-paper-light text-paper-ink">
-      <Header
-        onOpenSaved={() => setSavedOpen(true)}
-        anim={anim}
-        onAnimChange={handleAnimChange}
-      />
+      <Header onOpenSaved={() => setSavedOpen(true)} anim={anim} onAnimChange={handleAnimChange} />
       <SearchBar
         value={term}
         onSubmit={applySearch}
@@ -185,15 +177,12 @@ export default function App() {
                 <div className="flex min-h-[480px] items-center justify-center">
                   <Spinner
                     size="lg"
-                    label={
-                      data ? "Refreshing dispatches…" : "Inquiring of the archive…"
-                    }
+                    label={data ? "Refreshing dispatches…" : "Inquiring of the archive…"}
                   />
                 </div>
               ) : data?.results.length === 0 ? (
                 <div className="py-16 text-center font-serif italic text-paper-brown">
-                  No dispatches found. Try broadening the search or removing
-                  filters.
+                  No dispatches found. Try broadening the search or removing filters.
                 </div>
               ) : (
                 <div>

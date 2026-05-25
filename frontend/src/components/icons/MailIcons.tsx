@@ -26,13 +26,25 @@ export function CarrierBird({ className }: IconProps) {
       <path d="M64 28 L74 27 L64 30 Z" fill="hsl(38 75% 48%)" />
       {/* mini envelope held in beak */}
       <g transform="translate(70 22) rotate(8)">
-        <rect width="16" height="11" fill="hsl(35 30% 86%)" stroke="hsl(20 35% 30%)" strokeWidth="0.6" />
+        <rect
+          width="16"
+          height="11"
+          fill="hsl(35 30% 86%)"
+          stroke="hsl(20 35% 30%)"
+          strokeWidth="0.6"
+        />
         <path d="M0 0 L8 7 L16 0" fill="none" stroke="hsl(20 35% 30%)" strokeWidth="0.6" />
       </g>
       {/* left wing — pivots around (34, 30) */}
       <g className="bird-wing bird-wing-left">
         <path d="M34 30 Q26 6 12 16 Q22 28 34 32 Z" />
-        <path d="M28 22 Q22 14 16 18" fill="none" stroke="hsl(20 50% 22%)" strokeWidth="0.6" opacity="0.6" />
+        <path
+          d="M28 22 Q22 14 16 18"
+          fill="none"
+          stroke="hsl(20 50% 22%)"
+          strokeWidth="0.6"
+          opacity="0.6"
+        />
       </g>
       {/* right wing — back wing, half-opacity for depth */}
       <g className="bird-wing bird-wing-right">
@@ -81,7 +93,14 @@ export function SealedEnvelope({ className }: IconProps) {
         strokeWidth="2.5"
       />
       {/* wax seal */}
-      <circle cx="60" cy="50" r="9" fill="hsl(0 65% 36%)" stroke="hsl(0 60% 22%)" strokeWidth="1.4" />
+      <circle
+        cx="60"
+        cy="50"
+        r="9"
+        fill="hsl(0 65% 36%)"
+        stroke="hsl(0 60% 22%)"
+        strokeWidth="1.4"
+      />
       <text
         x="60"
         y="54"
@@ -128,9 +147,25 @@ export function FoldedNewsletter({ className }: IconProps) {
   return (
     <svg viewBox="0 0 100 80" className={className}>
       {/* back page */}
-      <rect x="14" y="10" width="72" height="64" fill="hsl(40 36% 90%)" stroke="hsl(20 35% 30%)" strokeWidth="2" />
+      <rect
+        x="14"
+        y="10"
+        width="72"
+        height="64"
+        fill="hsl(40 36% 90%)"
+        stroke="hsl(20 35% 30%)"
+        strokeWidth="2"
+      />
       {/* front page */}
-      <rect x="8" y="14" width="72" height="64" fill="hsl(40 40% 94%)" stroke="hsl(20 35% 30%)" strokeWidth="2" />
+      <rect
+        x="8"
+        y="14"
+        width="72"
+        height="64"
+        fill="hsl(40 40% 94%)"
+        stroke="hsl(20 35% 30%)"
+        strokeWidth="2"
+      />
       {/* masthead */}
       <rect x="16" y="20" width="56" height="6" fill="hsl(20 50% 26%)" />
       {/* faux columns of text */}
@@ -147,7 +182,16 @@ export function FoldedNewsletter({ className }: IconProps) {
         />
       ))}
       {/* fold crease */}
-      <line x1="44" y1="14" x2="44" y2="78" stroke="hsl(20 35% 30%)" strokeWidth="0.6" opacity="0.4" strokeDasharray="2 2" />
+      <line
+        x1="44"
+        y1="14"
+        x2="44"
+        y2="78"
+        stroke="hsl(20 35% 30%)"
+        strokeWidth="0.6"
+        opacity="0.4"
+        strokeDasharray="2 2"
+      />
     </svg>
   );
 }
@@ -157,7 +201,15 @@ export function RolledLetter({ className }: IconProps) {
   return (
     <svg viewBox="0 0 100 80" className={className}>
       {/* paper sheet */}
-      <rect x="14" y="14" width="72" height="60" fill="hsl(40 42% 94%)" stroke="hsl(20 35% 30%)" strokeWidth="2" />
+      <rect
+        x="14"
+        y="14"
+        width="72"
+        height="60"
+        fill="hsl(40 42% 94%)"
+        stroke="hsl(20 35% 30%)"
+        strokeWidth="2"
+      />
       {/* lines of text */}
       {[24, 32, 40, 48, 56, 64].map((y, i) => (
         <line
@@ -180,7 +232,15 @@ export function RolledLetter({ className }: IconProps) {
       />
       {/* ribbon */}
       <rect x="44" y="14" width="12" height="60" fill="hsl(0 60% 38%)" opacity="0.85" />
-      <rect x="44" y="14" width="12" height="60" fill="none" stroke="hsl(0 60% 22%)" strokeWidth="0.6" />
+      <rect
+        x="44"
+        y="14"
+        width="12"
+        height="60"
+        fill="none"
+        stroke="hsl(0 60% 22%)"
+        strokeWidth="0.6"
+      />
     </svg>
   );
 }

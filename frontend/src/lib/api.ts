@@ -95,8 +95,7 @@ export function search(params: SearchParams): Promise<SearchResponse> {
   if (params.page) qp.set("page", String(params.page));
   if (params.pageSize) qp.set("page_size", String(params.pageSize));
   if (params.sort) qp.set("sort", params.sort);
-  if (params.filters && params.filters.length > 0)
-    qp.set("filters", params.filters.join(","));
+  if (params.filters && params.filters.length > 0) qp.set("filters", params.filters.join(","));
   if (params.bulk) qp.set("bulk", "true");
   return getJson(`${BASE}/search?${qp.toString()}`);
 }
@@ -107,9 +106,7 @@ export function getArticle(pmid: string): Promise<ArticleDetail> {
 
 export function getMesh(term: string, limit = 10) {
   const qp = new URLSearchParams({ term, limit: String(limit) });
-  return getJson<{ count: number; terms: MeshTerm[] }>(
-    `${BASE}/mesh?${qp.toString()}`,
-  );
+  return getJson<{ count: number; terms: MeshTerm[] }>(`${BASE}/mesh?${qp.toString()}`);
 }
 
 export function getCite(pmid: string): Promise<CiteResponse> {

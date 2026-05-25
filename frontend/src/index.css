@@ -88,10 +88,16 @@
 
 /* Backdrop fade — shared. */
 @keyframes backdrop-fade {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
-[data-anim] { animation: backdrop-fade 220ms ease-out both; }
+[data-anim] {
+  animation: backdrop-fade 220ms ease-out both;
+}
 
 /* === Phase 1: flying mail/paper icon ===
  *
@@ -125,28 +131,64 @@
   animation: icon-settle 380ms ease-out 720ms both;
 }
 @keyframes icon-settle {
-  from { transform: scale(1);   opacity: 1; }
-  to   { transform: scale(1.4); opacity: 0; }
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.4);
+    opacity: 0;
+  }
 }
 
 @keyframes courier-from-right {
-  0%   { transform: translate(88vw, -26vh) rotate(-22deg) scale(0.65); opacity: 0; }
-  18%  { opacity: 1; }
-  100% { transform: translate(0, 0)        rotate(0)      scale(1);    opacity: 1; }
+  0% {
+    transform: translate(88vw, -26vh) rotate(-22deg) scale(0.65);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0) rotate(0) scale(1);
+    opacity: 1;
+  }
 }
 @keyframes courier-from-bottom {
-  0%   { transform: translate(-30vw, 95vh) rotate(18deg) scale(0.7); opacity: 0; }
-  15%  { opacity: 1; }
-  100% { transform: translate(0, 0)        rotate(0)     scale(1);    opacity: 1; }
+  0% {
+    transform: translate(-30vw, 95vh) rotate(18deg) scale(0.7);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0) rotate(0) scale(1);
+    opacity: 1;
+  }
 }
 @keyframes courier-from-top {
-  0%   { transform: translate(0, -110vh) rotate(-8deg) scale(0.85); opacity: 0; }
-  15%  { opacity: 1; }
-  100% { transform: translate(0, 0)      rotate(2deg)  scale(1);    opacity: 1; }
+  0% {
+    transform: translate(0, -110vh) rotate(-8deg) scale(0.85);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0) rotate(2deg) scale(1);
+    opacity: 1;
+  }
 }
-[data-anim="envelope"] .mail-courier { animation: courier-from-right  720ms cubic-bezier(0.25, 0.75, 0.3, 1) both; }
-[data-anim="unfold"]   .mail-courier { animation: courier-from-bottom 720ms cubic-bezier(0.25, 0.75, 0.3, 1) both; }
-[data-anim="drop"]     .mail-courier { animation: courier-from-top    720ms cubic-bezier(0.3,  0.9,  0.35, 1.05) both; }
+[data-anim="envelope"] .mail-courier {
+  animation: courier-from-right 720ms cubic-bezier(0.25, 0.75, 0.3, 1) both;
+}
+[data-anim="unfold"] .mail-courier {
+  animation: courier-from-bottom 720ms cubic-bezier(0.25, 0.75, 0.3, 1) both;
+}
+[data-anim="drop"] .mail-courier {
+  animation: courier-from-top 720ms cubic-bezier(0.3, 0.9, 0.35, 1.05) both;
+}
 
 /* ── Carrier bird (envelope only) ──────────────────────────────── */
 .mail-bird {
@@ -168,22 +210,47 @@
 .bird-wing {
   animation: bird-wing-flap 220ms ease-in-out infinite;
 }
-.bird-wing-left  { transform-origin: 34px 30px; }
-.bird-wing-right { transform-origin: 42px 30px; animation-direction: reverse; }
+.bird-wing-left {
+  transform-origin: 34px 30px;
+}
+.bird-wing-right {
+  transform-origin: 42px 30px;
+  animation-direction: reverse;
+}
 @keyframes bird-wing-flap {
-  0%, 100% { transform: rotate(-12deg); }
-  50%      { transform: rotate(30deg); }
+  0%,
+  100% {
+    transform: rotate(-12deg);
+  }
+  50% {
+    transform: rotate(30deg);
+  }
 }
 @keyframes bird-peel-off {
-  0%   { transform: translate(0, 0)         rotate(-10deg); opacity: 1; }
-  100% { transform: translate(-55vw, -55vh) rotate(-44deg) scale(0.4); opacity: 0; }
+  0% {
+    transform: translate(0, 0) rotate(-10deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-55vw, -55vh) rotate(-44deg) scale(0.4);
+    opacity: 0;
+  }
 }
 
 /* === Phase 2: panel materialises in the centre === */
 @keyframes panel-pop {
-  0%   { transform: scale(0.25); opacity: 0; }
-  60%  { transform: scale(1.04); opacity: 1; }
-  100% { transform: scale(1);    opacity: 1; }
+  0% {
+    transform: scale(0.25);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 .modal-panel {
   transform-origin: center;
@@ -196,19 +263,23 @@
 /* A. ENVELOPE — a letter opener sweeps across the modal, then the
    flap rotates open, then the wax seal jolts. */
 @keyframes envelope-flap {
-  0%   { transform: rotateX(0deg);    opacity: 1; }
-  70%  { transform: rotateX(-95deg);  opacity: 1; }
-  100% { transform: rotateX(-130deg); opacity: 0; }
+  0% {
+    transform: rotateX(0deg);
+    opacity: 1;
+  }
+  70% {
+    transform: rotateX(-95deg);
+    opacity: 1;
+  }
+  100% {
+    transform: rotateX(-130deg);
+    opacity: 0;
+  }
 }
 [data-anim="envelope"] .anim-flap {
   position: absolute;
   inset: 0;
-  background:
-    repeating-linear-gradient(
-      135deg,
-      hsl(35 24% 84%) 0 12px,
-      hsl(35 28% 80%) 12px 24px
-    );
+  background: repeating-linear-gradient(135deg, hsl(35 24% 84%) 0 12px, hsl(35 28% 80%) 12px 24px);
   border-bottom: 2px solid hsl(20 35% 38% / 0.55);
   transform-origin: top center;
   backface-visibility: hidden;
@@ -232,10 +303,18 @@
   animation: seal-shake 260ms ease-out 1320ms both;
 }
 @keyframes seal-shake {
-  0%   { transform: translateX(-50%) rotate(0) scale(1); }
-  30%  { transform: translateX(-52%) rotate(-12deg) scale(1.08); }
-  60%  { transform: translateX(-48%) rotate(8deg)   scale(0.95); }
-  100% { transform: translateX(-50%) rotate(0)      scale(1); }
+  0% {
+    transform: translateX(-50%) rotate(0) scale(1);
+  }
+  30% {
+    transform: translateX(-52%) rotate(-12deg) scale(1.08);
+  }
+  60% {
+    transform: translateX(-48%) rotate(8deg) scale(0.95);
+  }
+  100% {
+    transform: translateX(-50%) rotate(0) scale(1);
+  }
 }
 
 /* Letter-opener sweep: enters off-screen right, slides across the
@@ -252,37 +331,85 @@
   pointer-events: none;
   filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.45));
 }
-.anim-knife > svg { width: 100%; height: 100%; }
+.anim-knife > svg {
+  width: 100%;
+  height: 100%;
+}
 [data-anim="envelope"] .anim-knife {
   animation: knife-sweep 640ms cubic-bezier(0.4, 0, 0.2, 1) 1080ms both;
 }
 @keyframes knife-sweep {
-  0%   { transform: translateX(110vw) rotate(-4deg); opacity: 0; }
-  15%  { transform: translateX(85vw)  rotate(-3deg); opacity: 1; }
-  50%  { transform: translateX(40vw)  rotate(0deg);  opacity: 1; }
-  85%  { transform: translateX(-10vw) rotate(4deg);  opacity: 1; }
-  100% { transform: translateX(-40vw) rotate(8deg);  opacity: 0; }
+  0% {
+    transform: translateX(110vw) rotate(-4deg);
+    opacity: 0;
+  }
+  15% {
+    transform: translateX(85vw) rotate(-3deg);
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(40vw) rotate(0deg);
+    opacity: 1;
+  }
+  85% {
+    transform: translateX(-10vw) rotate(4deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-40vw) rotate(8deg);
+    opacity: 0;
+  }
 }
 
 /* B. UNFOLD — sections fan open one after another. */
 @keyframes unfold-section {
-  from { transform: rotateX(-92deg); opacity: 0; }
-  to   { transform: rotateX(0deg);   opacity: 1; }
+  from {
+    transform: rotateX(-92deg);
+    opacity: 0;
+  }
+  to {
+    transform: rotateX(0deg);
+    opacity: 1;
+  }
 }
-[data-anim="unfold"] .anim-section { transform-origin: top center; }
-[data-anim="unfold"] .anim-section:nth-of-type(1) { animation: unfold-section 520ms cubic-bezier(0.2, 0.85, 0.25, 1) 1080ms both; }
-[data-anim="unfold"] .anim-section:nth-of-type(2) { animation: unfold-section 520ms cubic-bezier(0.2, 0.85, 0.25, 1) 1320ms both; }
-[data-anim="unfold"] .anim-section:nth-of-type(3) { animation: unfold-section 520ms cubic-bezier(0.2, 0.85, 0.25, 1) 1540ms both; }
+[data-anim="unfold"] .anim-section {
+  transform-origin: top center;
+}
+[data-anim="unfold"] .anim-section:nth-of-type(1) {
+  animation: unfold-section 520ms cubic-bezier(0.2, 0.85, 0.25, 1) 1080ms both;
+}
+[data-anim="unfold"] .anim-section:nth-of-type(2) {
+  animation: unfold-section 520ms cubic-bezier(0.2, 0.85, 0.25, 1) 1320ms both;
+}
+[data-anim="unfold"] .anim-section:nth-of-type(3) {
+  animation: unfold-section 520ms cubic-bezier(0.2, 0.85, 0.25, 1) 1540ms both;
+}
 
 /* C. DROP — a tiny additional bounce + tilt-settle after the panel pop. */
 @keyframes drop-settle {
-  0%   { transform: translateY(-22px) rotate(-1.8deg); }
-  55%  { transform: translateY(8px)   rotate(0.6deg); }
-  78%  { transform: translateY(-3px)  rotate(-0.2deg); }
-  100% { transform: translateY(0)     rotate(0); }
+  0% {
+    transform: translateY(-22px) rotate(-1.8deg);
+  }
+  55% {
+    transform: translateY(8px) rotate(0.6deg);
+  }
+  78% {
+    transform: translateY(-3px) rotate(-0.2deg);
+  }
+  100% {
+    transform: translateY(0) rotate(0);
+  }
 }
 [data-anim="drop"] .modal-panel,
-[data-anim="drop"].modal-panel { /* no-op selector left for clarity */ }
-[data-anim="drop"] .anim-section:nth-of-type(1) { animation: drop-settle 600ms cubic-bezier(0.34, 1.4, 0.5, 1) 1080ms both; }
-[data-anim="drop"] .anim-section:nth-of-type(2) { animation: drop-settle 600ms cubic-bezier(0.34, 1.4, 0.5, 1) 1200ms both; }
-[data-anim="drop"] .anim-section:nth-of-type(3) { animation: drop-settle 600ms cubic-bezier(0.34, 1.4, 0.5, 1) 1320ms both; }
+[data-anim="drop"].modal-panel {
+  /* no-op selector left for clarity */
+}
+[data-anim="drop"] .anim-section:nth-of-type(1) {
+  animation: drop-settle 600ms cubic-bezier(0.34, 1.4, 0.5, 1) 1080ms both;
+}
+[data-anim="drop"] .anim-section:nth-of-type(2) {
+  animation: drop-settle 600ms cubic-bezier(0.34, 1.4, 0.5, 1) 1200ms both;
+}
+[data-anim="drop"] .anim-section:nth-of-type(3) {
+  animation: drop-settle 600ms cubic-bezier(0.34, 1.4, 0.5, 1) 1320ms both;
+}

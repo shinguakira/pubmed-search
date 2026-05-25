@@ -76,17 +76,13 @@ export function AdvancedBuilder({ open, onOpenChange, onApply }: Props) {
         <DialogHeader>
           <DialogTitle>Advanced search builder</DialogTitle>
           <DialogDescription>
-            Combine terms with boolean operators and field tags. PubMed-compatible
-            syntax.
+            Combine terms with boolean operators and field tags. PubMed-compatible syntax.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2">
           {rows.map((row, idx) => (
-            <div
-              key={row.id}
-              className="grid grid-cols-[80px_180px_1fr_auto] items-center gap-2"
-            >
+            <div key={row.id} className="grid grid-cols-[80px_180px_1fr_auto] items-center gap-2">
               {idx === 0 ? (
                 <div className="text-xs font-medium text-muted-foreground">—</div>
               ) : (
@@ -104,10 +100,7 @@ export function AdvancedBuilder({ open, onOpenChange, onApply }: Props) {
                   </SelectContent>
                 </Select>
               )}
-              <Select
-                value={row.field}
-                onValueChange={(v) => update(row.id, { field: v })}
-              >
+              <Select value={row.field} onValueChange={(v) => update(row.id, { field: v })}>
                 <SelectTrigger className="h-9">
                   <SelectValue />
                 </SelectTrigger>

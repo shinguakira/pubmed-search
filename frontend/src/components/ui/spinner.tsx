@@ -28,14 +28,7 @@ export function Spinner({ size = "md", label, className }: SpinnerProps) {
     >
       <Loader2 className={cn("animate-spin", SIZE[size])} />
       {label && (
-        <span
-          className={cn(
-            "font-serif italic text-paper-brown",
-            LABEL_SIZE[size],
-          )}
-        >
-          {label}
-        </span>
+        <span className={cn("font-serif italic text-paper-brown", LABEL_SIZE[size])}>{label}</span>
       )}
       {!label && <span className="sr-only">Loading…</span>}
     </output>

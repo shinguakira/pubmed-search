@@ -30,9 +30,7 @@ export function ResultsToolbar({
         data-testid="result-count"
       >
         {total.toLocaleString()}
-        <span className="ml-2 text-sm font-normal italic text-paper-brown">
-          results
-        </span>
+        <span className="ml-2 text-sm font-normal italic text-paper-brown">results</span>
         {typeof elapsedMs === "number" && (
           <span
             className="ml-2 font-mono text-[11px] font-normal text-paper-fade"
@@ -60,10 +58,7 @@ export function ResultsToolbar({
         </div>
         <div className="flex items-center gap-1.5">
           <span className="text-paper-brown">Per page</span>
-          <Select
-            value={String(pageSize)}
-            onValueChange={(v) => onPageSizeChange(Number(v))}
-          >
+          <Select value={String(pageSize)} onValueChange={(v) => onPageSizeChange(Number(v))}>
             <SelectTrigger className="h-8 w-[70px]">
               <SelectValue />
             </SelectTrigger>

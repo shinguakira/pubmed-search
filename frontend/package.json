@@ -1,7 +1,7 @@
 {
   "name": "pubmed-frontend",
-  "private": true,
   "version": "0.1.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,9 @@
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt .",
-    "fmt:check": "oxfmt --check ."
+    "fmt:check": "oxfmt --check .",
+    "typecheck": "tsc -b",
+    "check": "npm run fmt:check && npm run lint && npm run typecheck"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.1.2",
@@ -39,6 +41,7 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.2",
     "autoprefixer": "^10.4.20",
+    "oxfmt": "^0.51.0",
     "oxlint": "^1.66.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",

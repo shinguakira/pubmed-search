@@ -61,8 +61,7 @@ export function CiteDialog({ pmid, onOpenChange }: Props) {
         <DialogHeader>
           <DialogTitle>Cite this article</DialogTitle>
           <DialogDescription>
-            Choose a citation style. Copy and paste into your manuscript or
-            reference manager.
+            Choose a citation style. Copy and paste into your manuscript or reference manager.
           </DialogDescription>
         </DialogHeader>
 

@@ -1,12 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import {
-  ArrowLeft,
-  BookmarkCheck,
-  BookmarkIcon,
-  ExternalLink,
-  Quote,
-} from "lucide-react";
+import { ArrowLeft, BookmarkCheck, BookmarkIcon, ExternalLink, Quote } from "lucide-react";
 
 import { getArticle, type ArticleDetail } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -52,10 +46,7 @@ export function ArticlePage() {
     <div className="min-h-screen bg-paper-light text-paper-ink">
       <Header onOpenSaved={() => setSavedOpen(true)} />
       <div className="container py-6">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-1 text-sm text-pubmed hover:underline"
-        >
+        <Link to="/" className="inline-flex items-center gap-1 text-sm text-pubmed hover:underline">
           <ArrowLeft className="h-4 w-4" />
           Back to results
         </Link>
@@ -88,9 +79,7 @@ export function ArticlePage() {
                   </p>
                 )}
                 <p className="text-sm text-foreground/85">
-                  {data.authors
-                    .map((a) => `${a.fore_name} ${a.last_name}`.trim())
-                    .join(", ")}
+                  {data.authors.map((a) => `${a.fore_name} ${a.last_name}`.trim()).join(", ")}
                 </p>
               </header>
 
@@ -107,9 +96,7 @@ export function ArticlePage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
-                    No abstract available.
-                  </p>
+                  <p className="text-sm text-muted-foreground">No abstract available.</p>
                 )}
               </section>
 
@@ -120,14 +107,9 @@ export function ArticlePage() {
                   </h2>
                   <ol className="list-decimal space-y-1.5 pl-5 text-xs text-foreground/80">
                     {data.references.map((r) => (
-                      <li
-                        key={r.pmid ?? r.doi ?? r.citation}
-                        className="leading-snug"
-                      >
+                      <li key={r.pmid ?? r.doi ?? r.citation} className="leading-snug">
                         {r.citation || (
-                          <span className="italic text-muted-foreground">
-                            (no citation text)
-                          </span>
+                          <span className="italic text-muted-foreground">(no citation text)</span>
                         )}
                         {(r.pmid || r.doi) && (
                           <span className="ml-1 font-mono text-[10px] text-muted-foreground">
@@ -179,8 +161,8 @@ export function ArticlePage() {
                     toggle({
                       pmid: data.pmid,
                       title: data.title,
-                      authors: data.authors.map(
-                        (a) => `${a.last_name} ${a.fore_name?.[0] ?? ""}`.trim(),
+                      authors: data.authors.map((a) =>
+                        `${a.last_name} ${a.fore_name?.[0] ?? ""}`.trim(),
                       ),
                       source: data.journal,
                       pubdate: data.pubdate,

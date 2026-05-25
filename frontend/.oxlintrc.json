@@ -1,14 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": [
-    "react",
-    "react-hooks",
-    "typescript",
-    "import",
-    "jsx-a11y",
-    "unicorn",
-    "oxc"
-  ],
+  "plugins": ["react", "react-hooks", "typescript", "import", "jsx-a11y", "unicorn", "oxc"],
   "categories": {
     "correctness": "error",
     "suspicious": "warn",
@@ -24,11 +16,7 @@
     "node": true,
     "builtin": true
   },
-  "ignorePatterns": [
-    "dist/**",
-    "node_modules/**",
-    "**/*.d.ts"
-  ],
+  "ignorePatterns": ["dist/**", "node_modules/**", "**/*.d.ts"],
   "rules": {
     "no-console": "warn",
     "no-debugger": "error",

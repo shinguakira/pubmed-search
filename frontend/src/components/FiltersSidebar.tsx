@@ -135,9 +135,7 @@ interface Props {
 export function FiltersSidebar({ value, onChange }: Props) {
   const toggleArray = (key: keyof Filters, v: string) => {
     const current = value[key] as string[];
-    const next = current.includes(v)
-      ? current.filter((x) => x !== v)
-      : [...current, v];
+    const next = current.includes(v) ? current.filter((x) => x !== v) : [...current, v];
     onChange({ ...value, [key]: next });
   };
 
@@ -193,9 +191,7 @@ export function FiltersSidebar({ value, onChange }: Props) {
                   type="number"
                   placeholder="2020"
                   value={value.customFrom ?? ""}
-                  onChange={(e) =>
-                    onChange({ ...value, customFrom: e.target.value })
-                  }
+                  onChange={(e) => onChange({ ...value, customFrom: e.target.value })}
                   className="h-8"
                 />
               </div>
@@ -259,10 +255,7 @@ function FilterSection({
       >
         {title}
         <ChevronDown
-          className={cn(
-            "h-3 w-3 transition-transform",
-            open ? "rotate-180" : "rotate-0",
-          )}
+          className={cn("h-3 w-3 transition-transform", open ? "rotate-180" : "rotate-0")}
         />
       </button>
       {open && <div className="pb-1.5">{children}</div>}
