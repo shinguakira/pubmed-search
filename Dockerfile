@@ -30,7 +30,11 @@ ENV VITE_API_URL=""
 RUN npm run build --workspace frontend
 
 # ───────────────────── stage 2: backend ──────────────────────
-FROM rust:1.88-slim-bookworm AS backend
+# Keep this version in lock-step with backend/rust-toolchain.toml — they
+# pin together so local `cargo build` and CI `docker build` see the same
+# compiler. Drift causes the kind of "works on my machine" CI failures we
+# already hit once (edition2024 in a transitive dep).
+FROM rust:1.93-slim-bookworm AS backend
 WORKDIR /app/backend
 RUN apt-get update \
     && apt-get install -y --no-install-recommends pkg-config ca-certificates \

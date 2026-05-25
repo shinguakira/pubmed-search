@@ -1,0 +1,7 @@
+# Pin the Rust toolchain used by both local `cargo` invocations and the
+# Docker build. Bump this and the matching `FROM rust:<version>` line in
+# the repo-root Dockerfile together — otherwise local and CI drift and
+# (e.g.) edition2024-using transitive deps blow up only in CI.
+[toolchain]
+channel = "1.93.0"
+components = ["rustfmt", "clippy"]
