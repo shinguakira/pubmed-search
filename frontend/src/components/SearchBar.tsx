@@ -48,9 +48,10 @@ export function SearchBar({ value, onSubmit, bulk, onBulkChange }: SearchBarProp
   };
 
   const pickHint = (h: string) => {
+    // Only fill the input — do NOT trigger a search. User still has
+    // to press the Search button (or Enter) to fetch.
     setTerm(h);
     setFocused(false);
-    onSubmit(h);
   };
 
   return (

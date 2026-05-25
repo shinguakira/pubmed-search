@@ -117,15 +117,7 @@ export default function App() {
     });
   };
 
-  // Pending vs applied indicator — show "click Search to apply".
-  const pendingFragments = filtersToQueryFragments(pendingFilters);
   const enabled = term.trim().length > 0;
-  const hasPendingChanges =
-    enabled &&
-    (pendingFragments.join(",") !== appliedFiltersStr ||
-      pendingSort !== appliedSort ||
-      pendingPageSize !== appliedPageSize ||
-      pendingBulk !== appliedBulk);
 
   return (
     <div className="min-h-screen bg-paper-light text-paper-ink">
@@ -160,16 +152,6 @@ export default function App() {
                 onDisplayChange={(d) => setParam({ display: d })}
               />
             </div>
-
-            {hasPendingChanges && (
-              <div className="border-b border-paper-rust/40 bg-paper-rust/10 px-6 py-2 text-center font-serif text-xs italic text-paper-rust">
-                You have unapplied changes — press{" "}
-                <span className="font-bold uppercase tracking-[0.16em]">
-                  Search
-                </span>{" "}
-                to refresh results.
-              </div>
-            )}
 
             <div className="px-6 py-2">
               {!enabled ? (
