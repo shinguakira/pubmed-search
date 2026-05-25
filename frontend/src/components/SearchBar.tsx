@@ -4,6 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AdvancedBuilder } from "@/components/AdvancedBuilder";
 
+const HINTS = [
+  "crispr cas9",
+  "glaucoma OCT",
+  "long covid",
+  "alzheimer review",
+  "GLP-1",
+  "diabetes",
+];
+
 interface SearchBarProps {
   value: string;
   onSubmit: (term: string) => void;
@@ -39,7 +48,7 @@ export function SearchBar({ value, onSubmit }: SearchBarProps) {
               Search
             </Button>
           </div>
-          <div className="flex items-center justify-between text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs">
             <button
               type="button"
               className="font-serif italic text-paper-rust underline-offset-2 hover:underline"
@@ -47,12 +56,24 @@ export function SearchBar({ value, onSubmit }: SearchBarProps) {
             >
               › Advanced builder
             </button>
-            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-paper-brown">
-              Try:{" "}
-              <span className="text-paper-sepia">crispr cas9</span>
-              {" · "}
-              <span className="text-paper-sepia">covid 2024[dp]</span>
-            </p>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-paper-brown">
+                Try
+              </span>
+              {HINTS.map((h) => (
+                <button
+                  key={h}
+                  type="button"
+                  onClick={() => {
+                    setTerm(h);
+                    onSubmit(h);
+                  }}
+                  className="border border-paper-rule bg-paper px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-paper-sepia transition-colors hover:border-paper-rust hover:bg-paper-light hover:text-paper-rust"
+                >
+                  {h}
+                </button>
+              ))}
+            </div>
           </div>
         </form>
 
