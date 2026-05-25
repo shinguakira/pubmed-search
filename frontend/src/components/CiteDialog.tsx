@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 
 interface Props {
   pmid: string | null;
@@ -66,7 +67,9 @@ export function CiteDialog({ pmid, onOpenChange }: Props) {
         </DialogHeader>
 
         {loading || !data ? (
-          <div className="h-40 animate-pulse rounded-md bg-muted" />
+          <div className="flex h-40 items-center justify-center">
+            <Spinner size="md" label="Composing citation…" />
+          </div>
         ) : (
           <Tabs defaultValue="ama" className="w-full">
             <TabsList>

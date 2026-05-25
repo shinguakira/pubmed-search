@@ -14,6 +14,7 @@ import { ResultItem } from "@/components/ResultItem";
 import { Pagination } from "@/components/Pagination";
 import { CiteDialog } from "@/components/CiteDialog";
 import { SavedDialog } from "@/components/SavedDialog";
+import { Spinner } from "@/components/ui/spinner";
 import { search, type SearchResponse } from "@/lib/api";
 
 export default function App() {
@@ -127,14 +128,21 @@ export default function App() {
                   {error.message}
                 </div>
               ) : loading && !data ? (
-                <ResultsSkeleton />
+                <div className="flex justify-center py-16">
+                  <Spinner size="lg" label="Inquiring of the archive…" />
+                </div>
               ) : data?.results.length === 0 ? (
                 <div className="py-16 text-center font-serif italic text-paper-brown">
                   No dispatches found. Try broadening the search or removing
                   filters.
                 </div>
               ) : (
-                <div>
+                <div className="relative">
+                  {loading && data && (
+                    <div className="absolute right-0 top-0 z-10 -mt-8">
+                      <Spinner size="sm" label="Refreshing…" />
+                    </div>
+                  )}
                   {data?.results.map((r, i) => (
                     <ResultItem
                       key={r.pmid}
@@ -168,17 +176,4 @@ export default function App() {
   );
 }
 
-function ResultsSkeleton() {
-  return (
-    <div className="space-y-4 py-4">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="space-y-2">
-          <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
-          <div className="h-3 w-1/2 animate-pulse rounded bg-muted/60" />
-          <div className="h-3 w-1/3 animate-pulse rounded bg-muted/60" />
-        </div>
-      ))}
-    </div>
-  );
-}
 

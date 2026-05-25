@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { CiteDialog } from "@/components/CiteDialog";
 import { SavedDialog } from "@/components/SavedDialog";
 import { Header } from "@/components/Header";
+import { Spinner } from "@/components/ui/spinner";
 import { useSaved } from "@/hooks/useSaved";
 
 export function ArticlePage() {
@@ -61,10 +62,8 @@ export function ArticlePage() {
         </Link>
 
         {loading && (
-          <div className="mt-6 space-y-3">
-            <div className="h-8 w-3/4 animate-pulse rounded bg-muted" />
-            <div className="h-4 w-1/2 animate-pulse rounded bg-muted/60" />
-            <div className="mt-6 h-64 animate-pulse rounded bg-muted/40" />
+          <div className="mt-16 flex justify-center">
+            <Spinner size="lg" label="Fetching article…" />
           </div>
         )}
 
