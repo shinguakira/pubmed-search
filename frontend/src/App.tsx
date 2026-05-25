@@ -180,9 +180,14 @@ export default function App() {
                 <div className="my-4 rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
                   {error.message}
                 </div>
-              ) : loading && !data ? (
-                <div className="flex justify-center py-16">
-                  <Spinner size="lg" label="Inquiring of the archive…" />
+              ) : loading ? (
+                <div className="flex min-h-[480px] items-center justify-center">
+                  <Spinner
+                    size="lg"
+                    label={
+                      data ? "Refreshing dispatches…" : "Inquiring of the archive…"
+                    }
+                  />
                 </div>
               ) : data?.results.length === 0 ? (
                 <div className="py-16 text-center font-serif italic text-paper-brown">
@@ -190,12 +195,7 @@ export default function App() {
                   filters.
                 </div>
               ) : (
-                <div className="relative">
-                  {loading && data && (
-                    <div className="absolute right-0 top-0 z-10 -mt-8">
-                      <Spinner size="sm" label="Refreshing…" />
-                    </div>
-                  )}
+                <div>
                   {data?.results.map((r, i) => (
                     <ResultItem
                       key={r.pmid}
