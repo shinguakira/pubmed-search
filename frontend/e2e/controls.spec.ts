@@ -10,7 +10,7 @@ import { test, expect } from "@playwright/test";
 async function searchCrispr(page: import("@playwright/test").Page) {
   await page.goto("/?q=crispr");
   await expect(page.getByTestId("result-count")).toBeVisible({ timeout: 20_000 });
-  await expect(page.locator("main button.grid").first()).toBeVisible();
+  await expect(page.locator("main button.grid").first()).toBeVisible({ timeout: 20_000 });
   // Defocus the search bar so the hint dropdown does not cover content.
   await page.locator("body").click({ position: { x: 5, y: 5 } });
 }
@@ -20,7 +20,7 @@ test("applying the Review filter triggers a refetch and a narrowed list", async 
 
   // Check the Review article-type filter and re-submit.
   await page.getByLabel("Review", { exact: true }).check();
-  await page.getByRole("button", { name: "Search" }).click();
+  await page.getByRole("button", { name: "Search", exact: true }).click();
   await expect(page.getByTestId("result-count")).toBeVisible({ timeout: 20_000 });
 
   await page.locator("body").click({ position: { x: 5, y: 5 } });

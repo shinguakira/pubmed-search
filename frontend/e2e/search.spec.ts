@@ -14,7 +14,7 @@ test("search for 'crispr' returns a list of results with the result count badge"
   await page.goto("/");
 
   await page.getByPlaceholder("Search PubMed…").fill("crispr");
-  await page.getByRole("button", { name: "Search" }).click();
+  await page.getByRole("button", { name: "Search", exact: true }).click();
 
   // NCBI round-trip takes a few seconds; allow up to 20s.
   await expect(page.getByTestId("result-count")).toBeVisible({ timeout: 20_000 });

@@ -39,20 +39,26 @@ test.describe("article modal — settled state per open animation", () => {
 });
 
 test("article modal with the references section scrolled into view", async ({ page }) => {
-  // Pick a PMID we know carries a references section in our test fixtures.
   await page.goto("/?q=crispr");
 
   const firstResult = page.locator("main button.grid").first();
   await expect(firstResult).toBeVisible({ timeout: 20_000 });
+
+  // Force Unfold (no flap covering content) for the cleanest references shot.
+  await page
+    .getByTestId("anim-switcher")
+    .getByRole("button", { name: "Unfold", exact: true })
+    .click();
+
   await firstResult.click();
 
   const drawer = page.getByTestId("article-drawer");
-  await expect(drawer).toBeVisible();
+  await expect(drawer).toBeVisible({ timeout: 10_000 });
   await page.waitForTimeout(2400);
 
   // Scroll inside the dialog to reveal the references panel.
   await drawer.evaluate((el) => el.scrollTo({ top: el.scrollHeight, behavior: "instant" }));
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(300);
 
   await page.screenshot({
     path: "../docs/screenshots/10-modal-references.png",
