@@ -45,8 +45,10 @@ RUN npm run build --workspace frontend
 # already hit once (edition2024 in a transitive dep).
 FROM rust:1.93-slim-bookworm AS backend
 WORKDIR /app/backend
+# `curl` is needed by utoipa-swagger-ui's build.rs, which downloads the
+# Swagger UI bundle at compile time. The slim image doesn't ship it.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends pkg-config ca-certificates \
+    && apt-get install -y --no-install-recommends pkg-config ca-certificates curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Cache deps separately from sources so source-only edits skip the slow
